@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+/* Tipografia base */
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-gray-900 text-white font-inter;
+}
+
+/* Botão de marca */
+.brand-btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md bg-brand text-white shadow-brand hover:bg-brand-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed;
+}
+
+/* Containers utilitários */
+.page-wrapper {
+  @apply min-h-screen;
+}
+.container {
+  @apply max-w-5xl mx-auto;
+}
