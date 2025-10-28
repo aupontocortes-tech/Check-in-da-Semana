@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { submitCheckin, sendReportWebhook } from '../api'
+import { submitCheckin, sendReportWebhook, getProfile } from '../api'
 import type { CheckinFormData } from '../types'
 
 const initial: CheckinFormData = {
@@ -34,7 +34,16 @@ export default function CheckinForm() {
     setData((d) => ({ ...d, [field]: value }))
   }
 
-  // Sem foto fixa: exibir título estilizado "Professora Naty"
+  // Foto fixa do site novamente
+  const [sitePhoto, setSitePhoto] = useState<string | null>(null)
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const p = await getProfile()
+        setSitePhoto(p.photo || null)
+      } catch {}
+    })()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -135,8 +144,15 @@ export default function CheckinForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h1 className="script-title text-3xl md:text-4xl">Professora Naty</h1>
+        <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center ml-4">
+          {sitePhoto ? (
+            <img src={sitePhoto} alt="Foto de perfil" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs opacity-70">Foto de perfil</span>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4">
