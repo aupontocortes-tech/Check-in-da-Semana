@@ -26,21 +26,9 @@ export default function AdminDashboard() {
   const [sendWhatsOpt, setSendWhatsOpt] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem('ADMIN_KEY')
-    if (stored) {
-      setAdminKey(stored)
-      ;(async () => {
-        try {
-          await fetchData(stored)
-          setOk(true)
-        } catch (e) {
-          setOk(false)
-          localStorage.removeItem('ADMIN_KEY')
-        }
-      })()
-    }
-    const storedUser = localStorage.getItem('ADMIN_USER')
-    if (storedUser) setAdminUser(storedUser)
+    // Exigir login sempre: não faz auto-login e limpa credenciais salvas
+    localStorage.removeItem('ADMIN_KEY')
+    localStorage.removeItem('ADMIN_USER')
     const storedEmail = localStorage.getItem('ADMIN_EMAIL')
     setAdminEmail(storedEmail || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '')
     const storedWhatsapp = localStorage.getItem('ADMIN_WHATSAPP')
@@ -60,9 +48,7 @@ export default function AdminDashboard() {
     try {
       const resp = await adminLogin({ username: user, password: pass })
       if (!resp.ok) throw new Error('invalid')
-      // Persist minimal session locally
-      localStorage.setItem('ADMIN_USER', user)
-      localStorage.setItem('ADMIN_KEY', pass)
+      // Não persistir sessão: exigir login sempre
       await fetchData(pass)
       setOk(true)
     } catch (e) {
