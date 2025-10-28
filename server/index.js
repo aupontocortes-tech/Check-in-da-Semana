@@ -58,7 +58,7 @@ app.post('/api/admin/login', (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ error: 'missing_credentials' })
   }
-  if (String(username) !== expectedUser || String(password) !== expectedPass) {
+  if (String(username).toLowerCase() !== String(expectedUser).toLowerCase() || String(password) !== String(expectedPass)) {
     return res.status(401).json({ error: 'invalid_credentials' })
   }
   // For simplicity we return ok; frontend will use ADMIN_KEY for authorized fetches

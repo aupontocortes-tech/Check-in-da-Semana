@@ -11,7 +11,7 @@ export async function adminLogin(payload: { username: string; password: string }
     // Fallback para ambientes somente-frontend (ex.: Vercel) usando variáveis VITE_
     const viteUser = (import.meta.env.VITE_ADMIN_USERNAME as string) || 'professor'
     const viteKey = (import.meta.env.VITE_ADMIN_KEY as string) || '0808'
-    const ok = payload.username === viteUser && payload.password === viteKey
+    const ok = payload.username.trim().toLowerCase() === viteUser.toLowerCase() && payload.password === viteKey
     return { ok }
   }
 }
