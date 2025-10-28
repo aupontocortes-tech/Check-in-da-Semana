@@ -27,3 +27,8 @@ export async function sendReportWebhook(payload: any) {
   const res = await axios.post(`${API_BASE}/api/report/send`, payload)
   return res.data
 }
+
+export async function clearAllData(payload: { adminKey: string }) {
+  const res = await axios.post(`${API_BASE}/api/admin/clear`, payload)
+  return res.data as { ok: boolean; deleted: number }
+}

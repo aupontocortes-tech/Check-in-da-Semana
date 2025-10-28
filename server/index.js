@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import PDFDocument from 'pdfkit'
 import dotenv from 'dotenv'
+import nodemailer from 'nodemailer'
 
 dotenv.config()
 
@@ -64,6 +65,23 @@ app.get('/api/checkins', (req, res) => {
   res.json(rows)
 })
 
+// Admin: limpar todos os dados (exige apenas a senha ADMIN_KEY)
+app.post('/api/admin/clear', (req, res) => {
+  const { adminKey } = req.body || {}
+  const expectedPass = process.env.ADMIN_KEY || 'admin123'
+  if (!adminKey || String(adminKey) !== expectedPass) {
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+  const previous = readAll()
+  try {
+    fs.writeFileSync(storePath, '[]', 'utf-8')
+    return res.json({ ok: true, deleted: previous.length })
+  } catch (e) {
+    console.warn('Falha ao limpar dados', e)
+    return res.status(500).json({ error: 'clear_failed' })
+  }
+})
+
 app.post('/api/report/pdf', (req, res) => {
   const { nome, semanaTexto } = req.body || {}
   const doc = new PDFDocument()
@@ -86,15 +104,99 @@ app.post('/api/report/pdf', (req, res) => {
 })
 
 app.post('/api/report/send', async (req, res) => {
+  const { adminEmail = '', adminWhatsapp = '', tipo = 'weekly_report', ...rest } = req.body || {}
+  const payload = { type: tipo, adminEmail, adminWhatsapp, ...rest }
+
+  // 1) Tenta enviar via webhook se configurado
   const webhook = process.env.REPORT_WEBHOOK_URL
-  if (!webhook) return res.json({ ok: true, note: 'REPORT_WEBHOOK_URL não configurada; operação simulada.' })
-  const payload = { type: 'weekly_report', ...req.body }
-  try {
-    const resp = await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    res.json({ ok: true, status: resp.status })
-  } catch (e) {
-    res.status(500).json({ error: 'webhook_failed' })
+  if (webhook) {
+    try {
+      const resp = await fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      // Continua para e-mail/WhatsApp também, se configurados
+    } catch (e) {
+      console.warn('Webhook falhou', e)
+    }
   }
+
+  // 2) Envio de e-mail direto via SMTP se estiver configurado
+  const smtpHost = process.env.SMTP_HOST
+  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined
+  const smtpUser = process.env.SMTP_USER
+  const smtpPass = process.env.SMTP_PASS
+  const emailFrom = process.env.EMAIL_FROM || smtpUser
+  if (smtpHost && smtpPort && smtpUser && smtpPass && adminEmail) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465, // 465 = SSL
+        auth: { user: smtpUser, pass: smtpPass },
+      })
+      const subject = `Novo check-in: ${rest.nomeCompleto || 'Aluno'} — ${rest.semanaTexto || ''}`
+      const text = `Novo check-in enviado\n\n` +
+        `Nome: ${rest.nomeCompleto}\nSemana: ${rest.semanaTexto}\n` +
+        `Treinos de força: ${rest.treinosForca}\nEvolução: ${rest.evolucaoDesempenho}\n` +
+        `Energia: ${rest.energiaGeral}\nSono: ${rest.sonoRecuperacao}\nAlimentação: ${rest.alimentacaoPlano}\n` +
+        `Cardio: ${rest.cardioSessoes} sessões (${rest.tipoCardio}, ${rest.duracaoCardio} min, ${rest.intensidadeCardio})\n` +
+        `Motivação/humor: ${rest.motivacaoHumor}\n` +
+        `Treino não completado: ${rest.treinoNaoCompletado}\n` +
+        `Dor/fadiga: ${rest.dorOuFadiga}\n` +
+        `Ajuste próxima semana: ${rest.ajusteProximaSemana}\n` +
+        `Comentários: ${rest.comentariosAdicionais}\n` +
+        (rest.diasMarcados?.length ? `Dias marcados: ${rest.diasMarcados.join(', ')}` : '')
+      await transporter.sendMail({ from: emailFrom, to: adminEmail, subject, text })
+    } catch (e) {
+      console.warn('Envio de e-mail falhou', e)
+    }
+  } else if (adminEmail) {
+    // Fallback de teste: usa uma conta Ethereal gerada automaticamente
+    try {
+      const testAccount = await nodemailer.createTestAccount()
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      })
+      const subject = `Novo check-in: ${rest.nomeCompleto || 'Aluno'} — ${rest.semanaTexto || ''}`
+      const text = `Novo check-in enviado\n\n` +
+        `Nome: ${rest.nomeCompleto}\nSemana: ${rest.semanaTexto}\n` +
+        `Treinos de força: ${rest.treinosForca}\nEvolução: ${rest.evolucaoDesempenho}\n` +
+        `Energia: ${rest.energiaGeral}\nSono: ${rest.sonoRecuperacao}\nAlimentação: ${rest.alimentacaoPlano}\n` +
+        `Cardio: ${rest.cardioSessoes} sessões (${rest.tipoCardio}, ${rest.duracaoCardio} min, ${rest.intensidadeCardio})\n` +
+        `Motivação/humor: ${rest.motivacaoHumor}\n` +
+        `Treino não completado: ${rest.treinoNaoCompletado}\n` +
+        `Dor/fadiga: ${rest.dorOuFadiga}\n` +
+        `Ajuste próxima semana: ${rest.ajusteProximaSemana}\n` +
+        `Comentários: ${rest.comentariosAdicionais}\n` +
+        (rest.diasMarcados?.length ? `Dias marcados: ${rest.diasMarcados.join(', ')}` : '')
+      const info = await transporter.sendMail({ from: testAccount.user, to: adminEmail, subject, text })
+      const previewUrl = nodemailer.getTestMessageUrl(info)
+      if (previewUrl) {
+        console.log('Email de teste (Ethereal) enviado. Preview URL:', previewUrl)
+      }
+    } catch (e) {
+      console.warn('Envio de e-mail (teste Ethereal) falhou', e)
+    }
+  }
+
+  // 3) Envio via WhatsApp Cloud API se configurado
+  const wabaToken = process.env.WABA_TOKEN
+  const wabaPhoneId = process.env.WABA_PHONE_ID
+  if (wabaToken && wabaPhoneId && adminWhatsapp) {
+    try {
+      const msg = `Novo check-in: ${rest.nomeCompleto || ''}\nSemana: ${rest.semanaTexto || ''}\nTreinos de força: ${rest.treinosForca}\nEnergia: ${rest.energiaGeral}\nSono: ${rest.sonoRecuperacao}\nAlimentação: ${rest.alimentacaoPlano}`
+      await fetch(`https://graph.facebook.com/v17.0/${wabaPhoneId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${wabaToken}` },
+        body: JSON.stringify({ messaging_product: 'whatsapp', to: adminWhatsapp, type: 'text', text: { body: msg } }),
+      })
+    } catch (e) {
+      console.warn('Envio WhatsApp falhou', e)
+    }
+  }
+
+  res.json({ ok: true })
 })
 
 const port = process.env.PORT || 5174

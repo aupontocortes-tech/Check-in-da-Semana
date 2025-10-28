@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { submitCheckin } from '../api'
+import { submitCheckin, sendReportWebhook } from '../api'
 import type { CheckinFormData } from '../types'
 
 const initial: CheckinFormData = {
@@ -37,7 +37,44 @@ export default function CheckinForm() {
     e.preventDefault()
     try {
       setLoading(true)
+      // 1) Salva o check-in
       await submitCheckin(data)
+
+      // 2) Envia somente via WhatsApp: desativa e-mail e abre Click-to-Chat
+      try {
+        const adminEmail = '' // WhatsApp-only: não enviar e-mail
+        const adminWhatsapp = localStorage.getItem('ADMIN_WHATSAPP') || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || ''
+        // Chama backend para log/webhook/Cloud API (se configurado)
+        await sendReportWebhook({
+          ...data,
+          tipo: 'checkin_submitted',
+          adminEmail,
+          adminWhatsapp,
+        })
+        // Fallback imediato: abrir WhatsApp com mensagem pré-preenchida
+        if (adminWhatsapp) {
+          const lines = [
+            `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
+            `Treinos de força: ${data.treinosForca}`,
+            `Evolução: ${data.evolucaoDesempenho}`,
+            `Energia: ${data.energiaGeral}`,
+            `Sono: ${data.sonoRecuperacao}`,
+            `Alimentação: ${data.alimentacaoPlano}`,
+            `Cardio: ${data.cardioSessoes} sessões (${data.tipoCardio}, ${data.duracaoCardio} min, ${data.intensidadeCardio})`,
+            data.treinoNaoCompletado ? `Treino não completado: ${data.treinoNaoCompletado}` : '',
+            data.dorOuFadiga ? `Dor/fadiga: ${data.dorOuFadiga}` : '',
+            data.ajusteProximaSemana ? `Ajuste próxima semana: ${data.ajusteProximaSemana}` : '',
+            data.comentariosAdicionais ? `Comentários: ${data.comentariosAdicionais}` : '',
+            (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
+          ].filter(Boolean)
+          const msg = encodeURIComponent(lines.join('\n'))
+          const url = `https://wa.me/${adminWhatsapp}?text=${msg}`
+          // Abrir na mesma aba para evitar bloqueio de pop-ups/redirecionamentos
+          try { window.location.href = url } catch {}
+        }
+      } catch (_) {
+        // Falha no webhook não impede confirmação
+      }
       navigate('/confirmation')
     } catch (err) {
       alert('Erro ao enviar. Tente novamente.')
