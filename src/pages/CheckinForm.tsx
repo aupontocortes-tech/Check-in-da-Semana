@@ -144,15 +144,15 @@ export default function CheckinForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="script-title text-3xl md:text-4xl">Professora Naty</h1>
-        <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center ml-4">
+      <div className="flex items-center gap-4">
+        <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
           {sitePhoto ? (
             <img src={sitePhoto} alt="Foto de perfil" className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs opacity-70">Foto de perfil</span>
           )}
         </div>
+        <h1 className="script-title text-3xl md:text-4xl">Professora Naty</h1>
       </div>
 
       <div className="grid gap-4">
