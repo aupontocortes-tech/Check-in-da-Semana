@@ -10,7 +10,22 @@ dotenv.config()
 
 const app = express()
 app.use(express.json({ limit: '1mb' }))
-app.use(cors({ origin: [/^http:\/\/localhost:\d+$/] }))
+// CORS: permitir localhost e origens definidas via env (ex.: Vercel)
+const corsAllowList = [
+  /^http:\/\/localhost:\d+$/,
+  process.env.CORS_ORIGIN,
+  process.env.CORS_ORIGIN_2,
+  process.env.CORS_ORIGIN_3,
+].filter(Boolean)
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true)
+    const ok = corsAllowList.some((rule) =>
+      rule instanceof RegExp ? rule.test(origin) : String(rule) === String(origin)
+    )
+    return cb(null, ok)
+  },
+}))
 
 const dataDir = path.join(process.cwd(), 'data')
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir)
@@ -202,4 +217,8 @@ app.post('/api/report/send', async (req, res) => {
 const port = process.env.PORT || 5174
 app.listen(port, () => {
   console.log(`API server running at http://localhost:${port}`)
+})
+// Healthcheck para deploys
+app.get('/health', (_req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString() })
 })
