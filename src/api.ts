@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { CheckinFormData } from './types'
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:5174'
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:5175'
 
 export async function adminLogin(payload: { username: string; password: string }) {
   try {

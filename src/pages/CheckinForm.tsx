@@ -30,6 +30,36 @@ export default function CheckinForm() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
+  // PWA: captura do evento para instalar como app
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstallClick = async () => {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (window.navigator as any).standalone
+    try {
+      if (deferredPrompt) {
+        deferredPrompt.prompt()
+        await deferredPrompt.userChoice
+        setDeferredPrompt(null)
+        return
+      }
+      // Instruções para iOS (não dispara beforeinstallprompt)
+      if (isIOS && !isStandalone) {
+        alert('No iPhone: toque em Compartilhar → Adicionar à Tela de Início.')
+        return
+      }
+      alert('Para instalar, use o menu do navegador: “Adicionar à tela inicial”.')
+    } catch {}
+  }
+
   const handleChange = (field: keyof CheckinFormData, value: any) => {
     setData((d) => ({ ...d, [field]: value }))
   }
@@ -322,9 +352,14 @@ export default function CheckinForm() {
         <input className="px-3 py-2 rounded bg-white/5 border border-white/10" value={data.whatsapp} onChange={(e) => handleChange('whatsapp', e.target.value)} />
       </label>
 
-      <button type="submit" className="brand-btn" disabled={loading}>
-        {loading ? 'Enviando…' : 'Enviar Check-in'}
-      </button>
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={handleInstallClick} className="px-3 py-2 rounded bg-white/10 hover:bg-white/20">
+          Instalar app
+        </button>
+        <button type="submit" className="brand-btn" disabled={loading}>
+          {loading ? 'Enviando…' : 'Enviar Check-in'}
+        </button>
+      </div>
     </form>
   )
 }
