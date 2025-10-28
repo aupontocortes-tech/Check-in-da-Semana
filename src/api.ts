@@ -79,3 +79,27 @@ export async function clearAllData(payload: { adminKey: string }) {
     return { ok: true, deleted: arr.length } as { ok: boolean; deleted: number }
   }
 }
+
+// Perfil do site (foto fixa)
+export async function getProfile() {
+  try {
+    const res = await axios.get(`${API_BASE}/api/profile`)
+    return res.data as { photo: string | null }
+  } catch (_) {
+    const photo = localStorage.getItem('SITE_PROFILE_PHOTO')
+    return { photo: photo || null }
+  }
+}
+
+export async function updateProfile(payload: { photo: string | null }) {
+  try {
+    const res = await axios.post(`${API_BASE}/api/profile`, payload)
+    return res.data as { ok: boolean }
+  } catch (_) {
+    try {
+      if (payload.photo) localStorage.setItem('SITE_PROFILE_PHOTO', payload.photo)
+      else localStorage.removeItem('SITE_PROFILE_PHOTO')
+    } catch {}
+    return { ok: true }
+  }
+}

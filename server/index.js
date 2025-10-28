@@ -31,6 +31,8 @@ const dataDir = path.join(process.cwd(), 'data')
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir)
 const storePath = path.join(dataDir, 'checkins.json')
 if (!fs.existsSync(storePath)) fs.writeFileSync(storePath, '[]', 'utf-8')
+const profilePath = path.join(dataDir, 'profile.json')
+if (!fs.existsSync(profilePath)) fs.writeFileSync(profilePath, JSON.stringify({ photo: null }, null, 2), 'utf-8')
 
 function readAll() {
   const raw = fs.readFileSync(storePath, 'utf-8')
@@ -48,6 +50,55 @@ app.post('/api/checkin', (req, res) => {
   data.createdAt = new Date().toISOString()
   appendOne(data)
   res.json({ ok: true })
+})
+
+// Perfil público do site (foto)
+function readProfile() {
+  try {
+    const raw = fs.readFileSync(profilePath, 'utf-8')
+    const json = JSON.parse(raw)
+    return { photo: json.photo || null }
+  } catch {
+    return { photo: null }
+  }
+}
+
+function writeProfile(photo) {
+  const json = { photo: photo || null }
+  fs.writeFileSync(profilePath, JSON.stringify(json, null, 2), 'utf-8')
+}
+
+// Público: obter foto atual
+app.get('/api/profile', (_req, res) => {
+  res.json(readProfile())
+})
+
+// Público: atualizar foto (sem senha)
+app.post('/api/profile', (req, res) => {
+  const { photo } = req.body || {}
+  try {
+    writeProfile(photo)
+    res.json({ ok: true })
+  } catch (e) {
+    console.warn('Falha ao salvar perfil (público)', e)
+    res.status(500).json({ error: 'save_failed' })
+  }
+})
+
+// Admin: atualizar foto (exige ADMIN_KEY)
+app.post('/api/admin/profile', (req, res) => {
+  const { adminKey, photo } = req.body || {}
+  const expectedPass = process.env.ADMIN_KEY || '0808'
+  if (!adminKey || String(adminKey) !== expectedPass) {
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+  try {
+    writeProfile(photo)
+    res.json({ ok: true })
+  } catch (e) {
+    console.warn('Falha ao salvar perfil', e)
+    res.status(500).json({ error: 'save_failed' })
+  }
 })
 
 // Admin login: validates username and password

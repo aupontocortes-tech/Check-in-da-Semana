@@ -95,17 +95,15 @@ export default function AdminDashboard() {
   }
 
   const saveSitePhoto = async () => {
-    const pass = adminKey.trim()
-    if (!pass) return alert('Informe a senha do administrador.')
     setSavingPhoto(true)
     try {
-      const resp = await updateProfile({ adminKey: pass, photo: newPhoto })
+      const resp = await updateProfile({ photo: newPhoto })
       if (!resp.ok) throw new Error('invalid')
       setSitePhoto(newPhoto || null)
       setNewPhoto(null)
       alert('Foto do site atualizada!')
     } catch (e) {
-      alert('Senha inválida ou erro ao salvar a foto.')
+      alert('Erro ao salvar a foto.')
     } finally {
       setSavingPhoto(false)
     }
@@ -359,7 +357,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-            <p className="text-sm opacity-70">A foto é fixa no site e só pode ser alterada com a senha do administrador.</p>
+            <p className="text-sm opacity-70">A foto é fixa no site e pode ser alterada diretamente por quem tiver acesso a este painel.</p>
           </section>
 
           <section className="grid gap-6 md:grid-cols-2">
