@@ -208,9 +208,12 @@ export default function AdminDashboard() {
           `Sono: ${latest.sonoRecuperacao}`,
           `Alimentação: ${latest.alimentacaoPlano}`,
         ].filter(Boolean)
-        const msg = encodeURIComponent(lines.join('\n'))
-        const url = `https://wa.me/${phone}?text=${msg}`
-        try { window.location.href = url } catch {}
+        const text = encodeURIComponent(lines.join('\n'))
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        const appUrl = `whatsapp://send?phone=${phone}&text=${text}`
+        const webUrl = `https://wa.me/${phone}?text=${text}`
+        try { if (isMobile) window.location.href = appUrl } catch {}
+        setTimeout(() => { try { window.location.href = webUrl } catch {} }, 200)
       }
     }
     alert(`Relatório enviado${useEmail ? ' por e-mail' : ''}${useWhats ? (useEmail ? ' e WhatsApp' : ' por WhatsApp') : ''}!`)
