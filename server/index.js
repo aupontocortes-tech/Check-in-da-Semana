@@ -54,7 +54,7 @@ app.post('/api/checkin', (req, res) => {
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {}
   const expectedUser = process.env.ADMIN_USERNAME || 'professor'
-  const expectedPass = process.env.ADMIN_KEY || 'admin123'
+  const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!username || !password) {
     return res.status(400).json({ error: 'missing_credentials' })
   }
@@ -67,7 +67,7 @@ app.post('/api/admin/login', (req, res) => {
 
 app.get('/api/checkins', (req, res) => {
   const adminKey = req.query.adminKey
-  if (!adminKey || String(adminKey) !== (process.env.ADMIN_KEY || 'admin123')) {
+  if (!adminKey || String(adminKey) !== (process.env.ADMIN_KEY || '0808')) {
     return res.status(401).json({ error: 'unauthorized' })
   }
   let rows = readAll()
@@ -83,7 +83,7 @@ app.get('/api/checkins', (req, res) => {
 // Admin: limpar todos os dados (exige apenas a senha ADMIN_KEY)
 app.post('/api/admin/clear', (req, res) => {
   const { adminKey } = req.body || {}
-  const expectedPass = process.env.ADMIN_KEY || 'admin123'
+  const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!adminKey || String(adminKey) !== expectedPass) {
     return res.status(401).json({ error: 'unauthorized' })
   }

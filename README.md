@@ -15,6 +15,8 @@ App React + Tailwind para formulário público de check-in e painel administrati
   - Backend: `ADMIN_USERNAME`, `ADMIN_KEY`, `CORS_ORIGIN`, `PORT` e, opcionalmente, `SMTP_*`, `EMAIL_FROM`, `WABA_*`.
   - Frontend (Vercel): `VITE_API_BASE`, `VITE_ADMIN_USERNAME`, `VITE_ADMIN_KEY`.
 
+> Dica: se as variáveis não forem definidas, o app usa padrão `professor` / `0808` para login de administrador.
+
 ### Deploy Backend (Render)
 
 1. Fazer fork/import do repo no Render.
