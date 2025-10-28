@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: checkin-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    plan: free
+    envVars:
+      - key: ADMIN_USERNAME
+        value: professor
+      - key: ADMIN_KEY
+        value: 0808
+      - key: PORT
+        value: 5174
+      - key: CORS_ORIGIN
+        value: https://check-in-da-semana.vercel.app
+      # Opcional: configurar envio de e-mail/WhatsApp Cloud API
+      # - key: SMTP_HOST
+      #   value: ""
+      # - key: SMTP_PORT
+      #   value: "587"
+      # - key: SMTP_USER
+      #   value: ""
+      # - key: SMTP_PASS
+      #   value: ""
+      # - key: EMAIL_FROM
+      #   value: ""
+      # - key: WABA_TOKEN
+      #   value: ""
+      # - key: WABA_PHONE_ID
+      #   value: ""
