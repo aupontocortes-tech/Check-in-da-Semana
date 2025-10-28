@@ -152,7 +152,7 @@ export default function CheckinForm() {
             <span className="text-xs opacity-70">Foto de perfil</span>
           )}
         </div>
-        <h1 className="script-title text-3xl md:text-4xl">Professora Naty</h1>
+        <h1 className="script-title text-3xl md:text-4xl">personal Nat.</h1>
       </div>
 
       <div className="grid gap-4">
