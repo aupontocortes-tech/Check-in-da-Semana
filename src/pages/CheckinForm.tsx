@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { submitCheckin, sendReportWebhook } from '../api'
+import { submitCheckin, sendReportWebhook, getProfile } from '../api'
 import type { CheckinFormData } from '../types'
 
 const initial: CheckinFormData = {
@@ -34,16 +34,15 @@ export default function CheckinForm() {
     setData((d) => ({ ...d, [field]: value }))
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const url = String(reader.result || '')
-      handleChange('fotoPerfil', url)
-    }
-    reader.readAsDataURL(file)
-  }
+  const [sitePhoto, setSitePhoto] = useState<string | null>(null)
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const p = await getProfile()
+        setSitePhoto(p.photo || null)
+      } catch {}
+    })()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -146,18 +145,14 @@ export default function CheckinForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center gap-4">
         <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
-          {data.fotoPerfil ? (
-            <img src={data.fotoPerfil} alt="Foto de perfil" className="w-full h-full object-cover" />
+          {sitePhoto ? (
+            <img src={sitePhoto} alt="Foto de perfil" className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs opacity-70">Foto de perfil</span>
           )}
         </div>
-        <div className="grid gap-2">
-          <label htmlFor="profile-photo" className="brand-btn cursor-pointer">Selecionar foto</label>
-          <input id="profile-photo" type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-          {data.fotoPerfil && (
-            <button type="button" className="px-3 py-1 rounded bg-white/10 hover:bg-white/20" onClick={() => handleChange('fotoPerfil', '')}>Remover foto</button>
-          )}
+        <div className="grid">
+          <span className="text-sm opacity-70">Foto fixa do site (alterada pelo Admin)</span>
         </div>
       </div>
 

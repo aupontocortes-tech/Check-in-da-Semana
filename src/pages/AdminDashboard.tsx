@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData } from '../api'
+import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile } from '../api'
 import type { CheckinFormData, SleepOption, EnergyOption, MotivationOption } from '../types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, Legend, CartesianGrid, ResponsiveContainer } from 'recharts'
 
@@ -24,6 +24,9 @@ export default function AdminDashboard() {
   const [showSendModal, setShowSendModal] = useState(false)
   const [sendEmailOpt, setSendEmailOpt] = useState(false)
   const [sendWhatsOpt, setSendWhatsOpt] = useState(false)
+  const [sitePhoto, setSitePhoto] = useState<string | null>(null)
+  const [newPhoto, setNewPhoto] = useState<string | null>(null)
+  const [savingPhoto, setSavingPhoto] = useState(false)
 
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -33,6 +36,7 @@ export default function AdminDashboard() {
     setAdminEmail(storedEmail || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '')
     const storedWhatsapp = localStorage.getItem('ADMIN_WHATSAPP')
     setAdminWhatsapp(storedWhatsapp || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || '')
+    ;(async () => { try { const p = await getProfile(); setSitePhoto(p.photo || null) } catch {} })()
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {
@@ -79,6 +83,31 @@ export default function AdminDashboard() {
       alert('Senha inválida ou erro ao excluir os dados.')
     } finally {
       setClearing(false)
+    }
+  }
+
+  const handleNewPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setNewPhoto(String(reader.result || ''))
+    reader.readAsDataURL(file)
+  }
+
+  const saveSitePhoto = async () => {
+    const pass = adminKey.trim()
+    if (!pass) return alert('Informe a senha do administrador.')
+    setSavingPhoto(true)
+    try {
+      const resp = await updateProfile({ adminKey: pass, photo: newPhoto })
+      if (!resp.ok) throw new Error('invalid')
+      setSitePhoto(newPhoto || null)
+      setNewPhoto(null)
+      alert('Foto do site atualizada!')
+    } catch (e) {
+      alert('Senha inválida ou erro ao salvar a foto.')
+    } finally {
+      setSavingPhoto(false)
     }
   }
 
@@ -309,6 +338,28 @@ export default function AdminDashboard() {
             <div className="mt-3">
               <button className="brand-btn" onClick={() => { localStorage.setItem('ADMIN_EMAIL', adminEmail); localStorage.setItem('ADMIN_WHATSAPP', adminWhatsapp); alert('Contato salvo!') }}>Salvar</button>
             </div>
+          </section>
+
+          {/* Foto fixa do site, alterável apenas com senha do admin */}
+          <section className="bg-white rounded p-4 text-black grid gap-3">
+            <h3 className="font-semibold">Foto de perfil do site</h3>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                {newPhoto || sitePhoto ? (
+                  <img src={newPhoto || sitePhoto || ''} alt="Foto do site" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs opacity-70">Sem foto</span>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <input type="file" accept="image/*" onChange={handleNewPhotoSelect} />
+                <div className="flex gap-2">
+                  <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300" type="button" onClick={() => setNewPhoto(null)}>Remover</button>
+                  <button className="brand-btn" type="button" onClick={saveSitePhoto} disabled={savingPhoto}>{savingPhoto ? 'Salvando…' : 'Salvar foto'}</button>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm opacity-70">A foto é fixa no site e só pode ser alterada com a senha do administrador.</p>
           </section>
 
           <section className="grid gap-6 md:grid-cols-2">
