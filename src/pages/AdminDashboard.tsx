@@ -191,9 +191,16 @@ export default function AdminDashboard() {
         adminEmail: useEmail ? adminEmail : '',
         adminWhatsapp: useWhats ? adminWhatsapp : '',
       })
+    } catch (e) {
+      // Não bloqueia o WhatsApp; segue para o fallback abaixo
+    } finally {
+      setShowSendModal(false)
+    }
 
-      // Fallback cliente: abrir WhatsApp Click-to-Chat se selecionado
-      if (useWhats) {
+    // Fallback cliente: abrir WhatsApp Click-to-Chat independentemente do webhook
+    if (useWhats) {
+      const phone = (adminWhatsapp || '').replace(/\D/g, '')
+      if (phone) {
         const lines = [
           `Novo check-in: ${latest.nomeCompleto} — ${latest.semanaTexto || ''}`,
           `Treinos de força: ${latest.treinosForca}`,
@@ -202,16 +209,11 @@ export default function AdminDashboard() {
           `Alimentação: ${latest.alimentacaoPlano}`,
         ].filter(Boolean)
         const msg = encodeURIComponent(lines.join('\n'))
-        const url = `https://wa.me/${adminWhatsapp}?text=${msg}`
+        const url = `https://wa.me/${phone}?text=${msg}`
         try { window.location.href = url } catch {}
       }
-
-      alert(`Relatório enviado${useEmail ? ' por e-mail' : ''}${useWhats ? (useEmail ? ' e WhatsApp' : ' por WhatsApp') : ''}!`)
-    } catch (e) {
-      alert('Falha ao enviar o relatório. Tente novamente.')
-    } finally {
-      setShowSendModal(false)
     }
+    alert(`Relatório enviado${useEmail ? ' por e-mail' : ''}${useWhats ? (useEmail ? ' e WhatsApp' : ' por WhatsApp') : ''}!`)
   }
 
   if (!ok) {

@@ -40,40 +40,40 @@ export default function CheckinForm() {
       // 1) Salva o check-in
       await submitCheckin(data)
 
-      // 2) Envia somente via WhatsApp: desativa e-mail e abre Click-to-Chat
+      // 2) Envia somente via WhatsApp: desativa e-mail; abre Click-to-Chat SEMPRE
+      const adminEmail = '' // WhatsApp-only: não enviar e-mail
+      const adminWhatsappRaw = localStorage.getItem('ADMIN_WHATSAPP') || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || ''
+      const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '') // sanitiza para formato esperado do wa.me
+      // Chama backend para log/webhook/Cloud API (se configurado), mas não bloqueia UX
       try {
-        const adminEmail = '' // WhatsApp-only: não enviar e-mail
-        const adminWhatsapp = localStorage.getItem('ADMIN_WHATSAPP') || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || ''
-        // Chama backend para log/webhook/Cloud API (se configurado)
         await sendReportWebhook({
           ...data,
           tipo: 'checkin_submitted',
           adminEmail,
           adminWhatsapp,
         })
-        // Fallback imediato: abrir WhatsApp com mensagem pré-preenchida
-        if (adminWhatsapp) {
-          const lines = [
-            `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
-            `Treinos de força: ${data.treinosForca}`,
-            `Evolução: ${data.evolucaoDesempenho}`,
-            `Energia: ${data.energiaGeral}`,
-            `Sono: ${data.sonoRecuperacao}`,
-            `Alimentação: ${data.alimentacaoPlano}`,
-            `Cardio: ${data.cardioSessoes} sessões (${data.tipoCardio}, ${data.duracaoCardio} min, ${data.intensidadeCardio})`,
-            data.treinoNaoCompletado ? `Treino não completado: ${data.treinoNaoCompletado}` : '',
-            data.dorOuFadiga ? `Dor/fadiga: ${data.dorOuFadiga}` : '',
-            data.ajusteProximaSemana ? `Ajuste próxima semana: ${data.ajusteProximaSemana}` : '',
-            data.comentariosAdicionais ? `Comentários: ${data.comentariosAdicionais}` : '',
-            (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
-          ].filter(Boolean)
-          const msg = encodeURIComponent(lines.join('\n'))
-          const url = `https://wa.me/${adminWhatsapp}?text=${msg}`
-          // Abrir na mesma aba para evitar bloqueio de pop-ups/redirecionamentos
-          try { window.location.href = url } catch {}
-        }
       } catch (_) {
-        // Falha no webhook não impede confirmação
+        // Falha no webhook não impede abertura do WhatsApp nem confirmação
+      }
+      // Abrir WhatsApp com mensagem pré-preenchida (independente do webhook)
+      if (adminWhatsapp) {
+        const lines = [
+          `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
+          `Treinos de força: ${data.treinosForca}`,
+          `Evolução: ${data.evolucaoDesempenho}`,
+          `Energia: ${data.energiaGeral}`,
+          `Sono: ${data.sonoRecuperacao}`,
+          `Alimentação: ${data.alimentacaoPlano}`,
+          `Cardio: ${data.cardioSessoes} sessões (${data.tipoCardio}, ${data.duracaoCardio} min, ${data.intensidadeCardio})`,
+          data.treinoNaoCompletado ? `Treino não completado: ${data.treinoNaoCompletado}` : '',
+          data.dorOuFadiga ? `Dor/fadiga: ${data.dorOuFadiga}` : '',
+          data.ajusteProximaSemana ? `Ajuste próxima semana: ${data.ajusteProximaSemana}` : '',
+          data.comentariosAdicionais ? `Comentários: ${data.comentariosAdicionais}` : '',
+          (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
+        ].filter(Boolean)
+        const msg = encodeURIComponent(lines.join('\n'))
+        const url = `https://wa.me/${adminWhatsapp}?text=${msg}`
+        try { window.location.href = url } catch {}
       }
       navigate('/confirmation')
     } catch (err) {
