@@ -17,8 +17,20 @@ export async function adminLogin(payload: { username: string; password: string }
 }
 
 export async function submitCheckin(data: CheckinFormData) {
-  const res = await axios.post(`${API_BASE}/api/checkin`, data)
-  return res.data
+  try {
+    const res = await axios.post(`${API_BASE}/api/checkin`, data)
+    return res.data
+  } catch (_) {
+    // Fallback: sem backend, persistir localmente para não bloquear UX
+    const key = 'CHECKINS'
+    const arrStr = localStorage.getItem(key) || '[]'
+    let arr: any[] = []
+    try { arr = JSON.parse(arrStr) } catch { arr = [] }
+    const item = { ...data, createdAt: new Date().toISOString() }
+    arr.unshift(item)
+    try { localStorage.setItem(key, JSON.stringify(arr)) } catch {}
+    return { ok: true, local: true }
+  }
 }
 
 export async function listCheckins(params?: { nome?: string; from?: string; to?: string; adminKey?: string }) {
@@ -26,8 +38,17 @@ export async function listCheckins(params?: { nome?: string; from?: string; to?:
     const res = await axios.get(`${API_BASE}/api/checkins`, { params })
     return res.data as CheckinFormData[]
   } catch (_) {
-    // Fallback: sem backend, retorna lista vazia
-    return []
+    // Fallback: sem backend, ler do localStorage
+    const key = 'CHECKINS'
+    const arrStr = localStorage.getItem(key) || '[]'
+    let arr: CheckinFormData[] = []
+    try { arr = JSON.parse(arrStr) } catch { arr = [] }
+    // Filtragem básica por nome se fornecido
+    const nome = params?.nome?.trim()
+    if (nome) {
+      arr = arr.filter((c) => (c.nomeCompleto || '').toLowerCase().includes(nome.toLowerCase()))
+    }
+    return arr
   }
 }
 
