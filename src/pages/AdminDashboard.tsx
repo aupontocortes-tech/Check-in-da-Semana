@@ -248,7 +248,7 @@ export default function AdminDashboard() {
 
   if (!ok) {
     return (
-      <div className="max-w-md space-y-4">
+      <div className="max-w-md mx-auto px-4 space-y-4">
         <h2 className="text-xl font-bold">Acesso restrito</h2>
         <p>Informe usuário e senha do professor para entrar.</p>
         <input type="text" className="px-3 py-2 rounded bg-white border border-gray-200 w-full text-black" placeholder="Usuário (ex: professor)" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} />
@@ -259,10 +259,11 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
+    <div className="max-w-6xl mx-auto px-4 space-y-6">
+      <h2 className="text-2xl font-bold">Painel de Administração</h2>
+      <div className="flex items-end justify-between flex-wrap gap-2">
         <Link to="/" className="brand-btn">Voltar</Link>
-        <div className="flex items-end gap-3">
+        <div className="flex items-end gap-3 flex-wrap">
           <button
             className="px-3 py-2 rounded bg-red-600 hover:bg-red-700"
             title="Excluir todos os dados (requer senha)"
@@ -338,11 +339,11 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          {/* Foto fixa do site, alterável apenas com senha do admin */}
+          {/* Foto fixa do site */}
           <section className="bg-white rounded p-4 text-black grid gap-3">
             <h3 className="font-semibold">Foto de perfil do site</h3>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                 {newPhoto || sitePhoto ? (
                   <img src={newPhoto || sitePhoto || ''} alt="Foto do site" className="w-full h-full object-cover" />
                 ) : (
