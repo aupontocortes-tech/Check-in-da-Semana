@@ -27,5 +27,7 @@ export interface CheckinFormData {
   ajusteProximaSemana?: string;
   comentariosAdicionais?: string;
   whatsapp?: string;
+  /** Data URL (base64) da foto de perfil da aluna */
+  fotoPerfil?: string;
   createdAt?: string;
 }

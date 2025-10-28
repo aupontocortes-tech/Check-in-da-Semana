@@ -22,6 +22,7 @@ const initial: CheckinFormData = {
   ajusteProximaSemana: '',
   comentariosAdicionais: '',
   whatsapp: '',
+  fotoPerfil: '',
 }
 
 export default function CheckinForm() {
@@ -31,6 +32,17 @@ export default function CheckinForm() {
 
   const handleChange = (field: keyof CheckinFormData, value: any) => {
     setData((d) => ({ ...d, [field]: value }))
+  }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const url = String(reader.result || '')
+      handleChange('fotoPerfil', url)
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,7 +144,22 @@ export default function CheckinForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-2xl font-bold">Formulário de Check-in</h2>
+      <div className="flex items-center gap-4">
+        <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+          {data.fotoPerfil ? (
+            <img src={data.fotoPerfil} alt="Foto de perfil" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs opacity-70">Foto de perfil</span>
+          )}
+        </div>
+        <div className="grid gap-2">
+          <label htmlFor="profile-photo" className="brand-btn cursor-pointer">Selecionar foto</label>
+          <input id="profile-photo" type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+          {data.fotoPerfil && (
+            <button type="button" className="px-3 py-1 rounded bg-white/10 hover:bg-white/20" onClick={() => handleChange('fotoPerfil', '')}>Remover foto</button>
+          )}
+        </div>
+      </div>
 
       <div className="grid gap-4">
         <label className="grid gap-2">
