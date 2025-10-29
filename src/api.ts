@@ -7,6 +7,14 @@ const CANDIDATE_BASES: string[] = (() => {
   // Override em runtime via localStorage para produção (permite configurar sem redeploy)
   try {
     if (typeof window !== 'undefined') {
+      // Permite configuração via query string: ?api=... ou ?api_base=...
+      try {
+        const url = new URL(window.location.href)
+        const qApi = (url.searchParams.get('api') || url.searchParams.get('api_base') || '').trim()
+        if (qApi) {
+          window.localStorage.setItem('API_BASE', qApi)
+        }
+      } catch {}
       const rt = (window.localStorage.getItem('API_BASE') || '').trim()
       if (rt) bases.push(rt)
     }
