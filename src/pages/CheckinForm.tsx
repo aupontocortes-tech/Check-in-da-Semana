@@ -66,11 +66,13 @@ export default function CheckinForm() {
 
   // Foto fixa do site novamente
   const [sitePhoto, setSitePhoto] = useState<string | null>(null)
+  const [adminWhatsappFromProfile, setAdminWhatsappFromProfile] = useState<string>('')
   useEffect(() => {
     ;(async () => {
       try {
         const p = await getProfile()
         setSitePhoto(p.photo || null)
+        setAdminWhatsappFromProfile((p.whatsapp || '').replace(/\D/g, ''))
       } catch {}
     })()
   }, [])
@@ -84,7 +86,7 @@ export default function CheckinForm() {
 
       // 2) Envia somente via WhatsApp: desativa e-mail; abre Click-to-Chat SEMPRE
       const adminEmail = '' // WhatsApp-only: não enviar e-mail
-      const adminWhatsappRaw = localStorage.getItem('ADMIN_WHATSAPP') || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || ''
+      const adminWhatsappRaw = adminWhatsappFromProfile || localStorage.getItem('ADMIN_WHATSAPP') || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || ''
       const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '') // sanitiza para formato esperado do wa.me
       // Chama backend para log/webhook/Cloud API (se configurado), mas não bloqueia UX
       try {

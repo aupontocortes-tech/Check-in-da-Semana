@@ -32,7 +32,7 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir)
 const storePath = path.join(dataDir, 'checkins.json')
 if (!fs.existsSync(storePath)) fs.writeFileSync(storePath, '[]', 'utf-8')
 const profilePath = path.join(dataDir, 'profile.json')
-if (!fs.existsSync(profilePath)) fs.writeFileSync(profilePath, JSON.stringify({ photo: null }, null, 2), 'utf-8')
+if (!fs.existsSync(profilePath)) fs.writeFileSync(profilePath, JSON.stringify({ photo: null, email: '', whatsapp: '' }, null, 2), 'utf-8')
 
 function readAll() {
   const raw = fs.readFileSync(storePath, 'utf-8')
@@ -57,15 +57,20 @@ function readProfile() {
   try {
     const raw = fs.readFileSync(profilePath, 'utf-8')
     const json = JSON.parse(raw)
-    return { photo: json.photo || null }
+    return { photo: json.photo || null, email: json.email || '', whatsapp: json.whatsapp || '' }
   } catch {
-    return { photo: null }
+    return { photo: null, email: '', whatsapp: '' }
   }
 }
 
-function writeProfile(photo) {
-  const json = { photo: photo || null }
-  fs.writeFileSync(profilePath, JSON.stringify(json, null, 2), 'utf-8')
+function writeProfile(patch) {
+  const current = readProfile()
+  const next = {
+    photo: patch && 'photo' in patch ? (patch.photo || null) : current.photo,
+    email: patch && 'email' in patch ? (patch.email || '') : current.email,
+    whatsapp: patch && 'whatsapp' in patch ? (patch.whatsapp || '') : current.whatsapp,
+  }
+  fs.writeFileSync(profilePath, JSON.stringify(next, null, 2), 'utf-8')
 }
 
 // Público: obter foto atual
@@ -75,9 +80,9 @@ app.get('/api/profile', (_req, res) => {
 
 // Público: atualizar foto (sem senha)
 app.post('/api/profile', (req, res) => {
-  const { photo } = req.body || {}
+  const { photo, email, whatsapp } = req.body || {}
   try {
-    writeProfile(photo)
+    writeProfile({ photo, email, whatsapp })
     res.json({ ok: true })
   } catch (e) {
     console.warn('Falha ao salvar perfil (público)', e)
@@ -87,13 +92,13 @@ app.post('/api/profile', (req, res) => {
 
 // Admin: atualizar foto (exige ADMIN_KEY)
 app.post('/api/admin/profile', (req, res) => {
-  const { adminKey, photo } = req.body || {}
+  const { adminKey, photo, email, whatsapp } = req.body || {}
   const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!adminKey || String(adminKey) !== expectedPass) {
     return res.status(401).json({ error: 'unauthorized' })
   }
   try {
-    writeProfile(photo)
+    writeProfile({ photo, email, whatsapp })
     res.json({ ok: true })
   } catch (e) {
     console.warn('Falha ao salvar perfil', e)

@@ -32,11 +32,19 @@ export default function AdminDashboard() {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
     localStorage.removeItem('ADMIN_KEY')
     localStorage.removeItem('ADMIN_USER')
-    const storedEmail = localStorage.getItem('ADMIN_EMAIL')
-    setAdminEmail(storedEmail || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '')
-    const storedWhatsapp = localStorage.getItem('ADMIN_WHATSAPP')
-    setAdminWhatsapp(storedWhatsapp || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || '')
-    ;(async () => { try { const p = await getProfile(); setSitePhoto(p.photo || null) } catch {} })()
+    ;(async () => {
+      try {
+        const p = await getProfile()
+        setSitePhoto(p.photo || null)
+        setAdminEmail((p.email || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '').trim())
+        setAdminWhatsapp((p.whatsapp || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || '').trim())
+      } catch {
+        const storedEmail = localStorage.getItem('ADMIN_EMAIL')
+        setAdminEmail(storedEmail || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '')
+        const storedWhatsapp = localStorage.getItem('ADMIN_WHATSAPP')
+        setAdminWhatsapp(storedWhatsapp || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || '')
+      }
+    })()
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {
@@ -335,7 +343,23 @@ export default function AdminDashboard() {
               </label>
             </div>
             <div className="mt-3">
-              <button className="brand-btn" onClick={() => { localStorage.setItem('ADMIN_EMAIL', adminEmail); localStorage.setItem('ADMIN_WHATSAPP', adminWhatsapp); alert('Contato salvo!') }}>Salvar</button>
+              <button
+                className="brand-btn"
+                onClick={async () => {
+                  try {
+                    await updateProfile({ email: adminEmail, whatsapp: adminWhatsapp })
+                    try {
+                      localStorage.setItem('ADMIN_EMAIL', adminEmail)
+                      localStorage.setItem('ADMIN_WHATSAPP', adminWhatsapp)
+                    } catch {}
+                    alert('Contato salvo!')
+                  } catch {
+                    alert('Erro ao salvar contato')
+                  }
+                }}
+              >
+                Salvar
+              </button>
             </div>
           </section>
 

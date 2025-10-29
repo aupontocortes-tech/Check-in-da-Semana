@@ -84,21 +84,27 @@ export async function clearAllData(payload: { adminKey: string }) {
 export async function getProfile() {
   try {
     const res = await axios.get(`${API_BASE}/api/profile`)
-    return res.data as { photo: string | null }
+    return res.data as { photo: string | null; email?: string; whatsapp?: string }
   } catch (_) {
     const photo = localStorage.getItem('SITE_PROFILE_PHOTO')
-    return { photo: photo || null }
+    const email = localStorage.getItem('ADMIN_EMAIL') || ''
+    const whatsapp = localStorage.getItem('ADMIN_WHATSAPP') || ''
+    return { photo: photo || null, email, whatsapp }
   }
 }
 
-export async function updateProfile(payload: { photo: string | null }) {
+export async function updateProfile(payload: { photo?: string | null; email?: string; whatsapp?: string }) {
   try {
     const res = await axios.post(`${API_BASE}/api/profile`, payload)
     return res.data as { ok: boolean }
   } catch (_) {
     try {
-      if (payload.photo) localStorage.setItem('SITE_PROFILE_PHOTO', payload.photo)
-      else localStorage.removeItem('SITE_PROFILE_PHOTO')
+      if (payload.photo !== undefined) {
+        if (payload.photo) localStorage.setItem('SITE_PROFILE_PHOTO', payload.photo)
+        else localStorage.removeItem('SITE_PROFILE_PHOTO')
+      }
+      if (payload.email !== undefined) localStorage.setItem('ADMIN_EMAIL', payload.email || '')
+      if (payload.whatsapp !== undefined) localStorage.setItem('ADMIN_WHATSAPP', payload.whatsapp || '')
     } catch {}
     return { ok: true }
   }
