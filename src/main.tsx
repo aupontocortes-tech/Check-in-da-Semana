@@ -12,9 +12,16 @@ createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 )
 
-// Registra Service Worker para habilitar instalação PWA (localhost ou HTTPS)
+// Service Worker: registra apenas em produção; em dev, garante que nenhum SW esteja ativo
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
+  if ((import.meta as any).env?.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    })
+  } else {
+    // Em desenvolvimento, remove qualquer SW previamente instalado para evitar interferência no HMR
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((r) => r.unregister())
+    }).catch(() => {})
+  }
 }
