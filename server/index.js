@@ -9,7 +9,8 @@ import nodemailer from 'nodemailer'
 dotenv.config()
 
 const app = express()
-app.use(express.json({ limit: '1mb' }))
+// Aumenta limite para upload de foto em base64 (data URL)
+app.use(express.json({ limit: '10mb' }))
 // CORS: permitir localhost e origens definidas via env (ex.: Vercel)
 const corsAllowList = [
   /^http:\/\/localhost:\d+$/,
