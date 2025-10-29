@@ -21,6 +21,8 @@ const corsAllowList = [
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true)
+    // Se nenhuma origem foi configurada, permita todas (facilita primeiros deploys)
+    if (!corsAllowList.length) return cb(null, true)
     const ok = corsAllowList.some((rule) =>
       rule instanceof RegExp ? rule.test(origin) : String(rule) === String(origin)
     )
