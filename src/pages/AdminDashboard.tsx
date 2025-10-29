@@ -354,11 +354,8 @@ export default function AdminDashboard() {
                 className="brand-btn"
                 onClick={async () => {
                   try {
-                    await updateProfile({ email: adminEmail, whatsapp: adminWhatsapp })
-                    try {
-                      localStorage.setItem('ADMIN_EMAIL', adminEmail)
-                      localStorage.setItem('ADMIN_WHATSAPP', adminWhatsapp)
-                    } catch {}
+                    const resp = await updateProfile({ email: adminEmail, whatsapp: adminWhatsapp })
+                    if (!resp.ok) throw new Error('invalid')
                     setUpdateNotice('Configurações salvas. Todos os links foram atualizados.')
                     setTimeout(() => setUpdateNotice(''), 5000)
                   } catch {

@@ -86,10 +86,8 @@ export async function getProfile() {
     const res = await axios.get(`${API_BASE}/api/profile`)
     return res.data as { photo: string | null; email?: string; whatsapp?: string }
   } catch (_) {
-    const photo = localStorage.getItem('SITE_PROFILE_PHOTO')
-    const email = localStorage.getItem('ADMIN_EMAIL') || ''
-    const whatsapp = localStorage.getItem('ADMIN_WHATSAPP') || ''
-    return { photo: photo || null, email, whatsapp }
+    // Sem fallback local: para garantir consistência, retorna vazio se o servidor falhar
+    return { photo: null, email: '', whatsapp: '' }
   }
 }
 
@@ -98,14 +96,7 @@ export async function updateProfile(payload: { photo?: string | null; email?: st
     const res = await axios.post(`${API_BASE}/api/profile`, payload)
     return res.data as { ok: boolean }
   } catch (_) {
-    try {
-      if (payload.photo !== undefined) {
-        if (payload.photo) localStorage.setItem('SITE_PROFILE_PHOTO', payload.photo)
-        else localStorage.removeItem('SITE_PROFILE_PHOTO')
-      }
-      if (payload.email !== undefined) localStorage.setItem('ADMIN_EMAIL', payload.email || '')
-      if (payload.whatsapp !== undefined) localStorage.setItem('ADMIN_WHATSAPP', payload.whatsapp || '')
-    } catch {}
-    return { ok: true }
+    // Sem fallback local: falha explícita para não criar divergência entre links
+    return { ok: false }
   }
 }
