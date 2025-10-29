@@ -1,21 +1,22 @@
 import axios from 'axios'
 import { CheckinFormData } from './types'
 
-// Resolve possíveis bases da API: env, Render (nome do serviço) e localhost
+// Resolve possíveis bases da API: env, localhost (dev) e Render (produção)
 const CANDIDATE_BASES: string[] = (() => {
   const bases: string[] = []
   const envBase = (import.meta.env.VITE_API_BASE as string) || ''
-  if (envBase) bases.push(envBase)
   if (typeof window !== 'undefined') {
     const host = window.location.host || ''
     const isLocal = /localhost|127\.0\.0\.1/.test(host)
-    // Fallback para produção (Vercel) quando VITE_API_BASE não está definido
-    if (!envBase) bases.push('https://checkin-backend.onrender.com')
-    // Fallback para desenvolvimento
+    // Prioriza localhost em desenvolvimento para evitar tentativas na nuvem
     if (isLocal) bases.push('http://localhost:5175')
   } else {
     bases.push('http://localhost:5175')
   }
+  // Em seguida, qualquer base configurada via env
+  if (envBase) bases.push(envBase)
+  // Por fim, fallback Render quando não houver env
+  if (!envBase) bases.push('https://checkin-backend.onrender.com')
   // Remove duplicados e valores vazios
   return Array.from(new Set(bases.filter(Boolean)))
 })()
@@ -24,7 +25,7 @@ async function getWithFallback<T>(path: string): Promise<T> {
   let lastErr: any = null
   for (const base of CANDIDATE_BASES) {
     try {
-      const res = await axios.get(`${base}${path}`, { timeout: 10000 })
+      const res = await axios.get(`${base}${path}`, { timeout: 5000 })
       return res.data as T
     } catch (e) {
       lastErr = e
@@ -38,7 +39,7 @@ async function postWithFallback<T>(path: string, payload: any): Promise<T> {
   let lastErr: any = null
   for (const base of CANDIDATE_BASES) {
     try {
-      const res = await axios.post(`${base}${path}`, payload, { timeout: 10000 })
+      const res = await axios.post(`${base}${path}`, payload, { timeout: 5000 })
       return res.data as T
     } catch (e) {
       lastErr = e
