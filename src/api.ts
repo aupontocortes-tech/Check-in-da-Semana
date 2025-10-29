@@ -15,8 +15,9 @@ const CANDIDATE_BASES: string[] = (() => {
   }
   // Em seguida, qualquer base configurada via env
   if (envBase) bases.push(envBase)
-  // Por fim, fallback Render quando não houver env
-  if (!envBase) bases.push('https://checkin-backend.onrender.com')
+  // Por fim, fallback Render somente fora do modo dev quando não houver env
+  const isDev = Boolean((import.meta as any).env?.DEV)
+  if (!envBase && !isDev) bases.push('https://checkin-backend.onrender.com')
   // Remove duplicados e valores vazios
   return Array.from(new Set(bases.filter(Boolean)))
 })()
