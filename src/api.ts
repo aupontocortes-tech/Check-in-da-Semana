@@ -1,12 +1,57 @@
 import axios from 'axios'
 import { CheckinFormData } from './types'
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:5175'
+// Resolve possíveis bases da API: env, Render (nome do serviço) e localhost
+const CANDIDATE_BASES: string[] = (() => {
+  const bases: string[] = []
+  const envBase = (import.meta.env.VITE_API_BASE as string) || ''
+  if (envBase) bases.push(envBase)
+  if (typeof window !== 'undefined') {
+    const host = window.location.host || ''
+    const isLocal = /localhost|127\.0\.0\.1/.test(host)
+    // Fallback para produção (Vercel) quando VITE_API_BASE não está definido
+    if (!envBase) bases.push('https://checkin-backend.onrender.com')
+    // Fallback para desenvolvimento
+    if (isLocal) bases.push('http://localhost:5175')
+  } else {
+    bases.push('http://localhost:5175')
+  }
+  // Remove duplicados e valores vazios
+  return Array.from(new Set(bases.filter(Boolean)))
+})()
+
+async function getWithFallback<T>(path: string): Promise<T> {
+  let lastErr: any = null
+  for (const base of CANDIDATE_BASES) {
+    try {
+      const res = await axios.get(`${base}${path}`, { timeout: 10000 })
+      return res.data as T
+    } catch (e) {
+      lastErr = e
+      continue
+    }
+  }
+  throw lastErr || new Error('all_backends_failed')
+}
+
+async function postWithFallback<T>(path: string, payload: any): Promise<T> {
+  let lastErr: any = null
+  for (const base of CANDIDATE_BASES) {
+    try {
+      const res = await axios.post(`${base}${path}`, payload, { timeout: 10000 })
+      return res.data as T
+    } catch (e) {
+      lastErr = e
+      continue
+    }
+  }
+  throw lastErr || new Error('all_backends_failed')
+}
 
 export async function adminLogin(payload: { username: string; password: string }) {
   try {
-    const res = await axios.post(`${API_BASE}/api/admin/login`, payload)
-    return res.data as { ok: boolean }
+    const res = await postWithFallback<{ ok: boolean }>(`/api/admin/login`, payload)
+    return res as { ok: boolean }
   } catch (e) {
     // Fallback para ambientes somente-frontend (ex.: Vercel) usando variáveis VITE_
     const viteUser = (import.meta.env.VITE_ADMIN_USERNAME as string) || 'professor'
@@ -18,8 +63,8 @@ export async function adminLogin(payload: { username: string; password: string }
 
 export async function submitCheckin(data: CheckinFormData) {
   try {
-    const res = await axios.post(`${API_BASE}/api/checkin`, data)
-    return res.data
+    const res = await postWithFallback(`/api/checkin`, data)
+    return res
   } catch (_) {
     // Fallback: sem backend, persistir localmente para não bloquear UX
     const key = 'CHECKINS'
@@ -35,8 +80,9 @@ export async function submitCheckin(data: CheckinFormData) {
 
 export async function listCheckins(params?: { nome?: string; from?: string; to?: string; adminKey?: string }) {
   try {
-    const res = await axios.get(`${API_BASE}/api/checkins`, { params })
-    return res.data as CheckinFormData[]
+    const res = await getWithFallback<CheckinFormData[]>(`/api/checkins`)
+    // Nota: se precisar de params no backend, ajustar para incluir { params } no getWithFallback
+    return res as CheckinFormData[]
   } catch (_) {
     // Fallback: sem backend, ler do localStorage
     const key = 'CHECKINS'
@@ -53,19 +99,20 @@ export async function listCheckins(params?: { nome?: string; from?: string; to?:
 }
 
 export async function generatePdfReport(payload: { nome: string; semanaTexto?: string }) {
-  const res = await axios.post(`${API_BASE}/api/report/pdf`, payload, { responseType: 'blob' })
+  const base = CANDIDATE_BASES[0]
+  const res = await axios.post(`${base}/api/report/pdf`, payload, { responseType: 'blob' })
   return res.data as Blob
 }
 
 export async function sendReportWebhook(payload: any) {
-  const res = await axios.post(`${API_BASE}/api/report/send`, payload)
-  return res.data
+  const res = await postWithFallback(`/api/report/send`, payload)
+  return res
 }
 
 export async function clearAllData(payload: { adminKey: string }) {
   try {
-    const res = await axios.post(`${API_BASE}/api/admin/clear`, payload)
-    return res.data as { ok: boolean; deleted: number }
+    const res = await postWithFallback<{ ok: boolean; deleted: number }>(`/api/admin/clear`, payload)
+    return res as { ok: boolean; deleted: number }
   } catch (_) {
     // Fallback: sem backend, valida a senha contra VITE_ADMIN_KEY e limpa localStorage
     const viteKey = (import.meta.env.VITE_ADMIN_KEY as string) || '0808'
@@ -83,8 +130,8 @@ export async function clearAllData(payload: { adminKey: string }) {
 // Perfil do site (foto fixa)
 export async function getProfile() {
   try {
-    const res = await axios.get(`${API_BASE}/api/profile`)
-    return res.data as { photo: string | null; email?: string; whatsapp?: string }
+    const res = await getWithFallback<{ photo: string | null; email?: string; whatsapp?: string }>(`/api/profile`)
+    return res as { photo: string | null; email?: string; whatsapp?: string }
   } catch (_) {
     // Sem fallback local: para garantir consistência, retorna vazio se o servidor falhar
     return { photo: null, email: '', whatsapp: '' }
@@ -93,8 +140,8 @@ export async function getProfile() {
 
 export async function updateProfile(payload: { photo?: string | null; email?: string; whatsapp?: string }) {
   try {
-    const res = await axios.post(`${API_BASE}/api/profile`, payload)
-    return res.data as { ok: boolean }
+    const res = await postWithFallback<{ ok: boolean }>(`/api/profile`, payload)
+    return res as { ok: boolean }
   } catch (_) {
     // Sem fallback local: falha explícita para não criar divergência entre links
     return { ok: false }
