@@ -95,12 +95,51 @@ export default function AdminDashboard() {
     }
   }
 
+  // Reduz a imagem no cliente para evitar payloads grandes e falhas no backend
+  const processImageFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onerror = () => reject(new Error('failed_read'))
+      reader.onload = () => {
+        const src = String(reader.result || '')
+        const img = new Image()
+        img.onload = () => {
+          try {
+            const maxDim = 1024
+            const w = img.width
+            const h = img.height
+            const scale = Math.min(1, maxDim / Math.max(w, h))
+            const outW = Math.max(1, Math.round(w * scale))
+            const outH = Math.max(1, Math.round(h * scale))
+            const canvas = document.createElement('canvas')
+            canvas.width = outW
+            canvas.height = outH
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return resolve(src)
+            ctx.drawImage(img, 0, 0, outW, outH)
+            const out = canvas.toDataURL('image/jpeg', 0.85)
+            resolve(out)
+          } catch (e) {
+            resolve(src)
+          }
+        }
+        img.onerror = () => resolve(src)
+        img.src = src
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
   const handleNewPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setNewPhoto(String(reader.result || ''))
-    reader.readAsDataURL(file)
+    processImageFile(file)
+      .then((dataUrl) => setNewPhoto(dataUrl))
+      .catch(() => {
+        const reader = new FileReader()
+        reader.onload = () => setNewPhoto(String(reader.result || ''))
+        reader.readAsDataURL(file)
+      })
   }
 
   const saveSitePhoto = async () => {
