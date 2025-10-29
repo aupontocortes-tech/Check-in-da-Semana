@@ -2,6 +2,10 @@
 
 App React + Tailwind para formulário público de check-in e painel administrativo privado, com backend Express + SQLite.
 
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/aupontocortes-tech/Check-in-da-Semana)
+
+> Clique no botão acima para criar e publicar o backend automaticamente no Railway. Depois copie a URL gerada e defina como `VITE_API_BASE` no Vercel.
+
 ## Scripts
 
 - `npm run dev` — inicia Vite (frontend) e API (backend)
