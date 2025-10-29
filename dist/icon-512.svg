@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Círculo de fundo preto -->
+  <circle cx="256" cy="256" r="236" fill="#000000" stroke="#333333" stroke-width="20"/>
+  
+  <!-- Letra N branca -->
+  <text x="256" y="340" font-family="Arial, sans-serif" font-size="280" font-weight="bold" text-anchor="middle" fill="white">N</text>
+  
+  <!-- Círculo interno decorativo -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+</svg>
