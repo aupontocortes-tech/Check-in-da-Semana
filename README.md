@@ -25,12 +25,34 @@ App React + Tailwind para formulário público de check-in e painel administrati
 4. Ajustar `CORS_ORIGIN` para seu domínio Vercel.
 5. Copiar a URL pública (ex.: `https://seu-backend.onrender.com`).
 
+### Deploy Backend (Railway)
+
+1. Crie um projeto no Railway e conecte seu repositório.
+2. Railway detecta Node e usa `npm start` (já presente em `package.json`).
+3. Defina variáveis de ambiente: `ADMIN_USERNAME`, `ADMIN_KEY`, `CORS_ORIGIN` (domínio do Vercel) e, opcionalmente, `SMTP_*`, `EMAIL_FROM`.
+4. O Railway fornece `PORT` automaticamente — o backend já respeita `process.env.PORT`.
+5. Após deploy, copie a URL pública (ex.: `https://seu-backend.up.railway.app`).
+6. Teste saúde do serviço: `GET https://SEU_BACKEND/health` deve responder `{ ok: true }`.
+
+> Se usa previews do Vercel (URLs temporárias), inclua também `CORS_ORIGIN_2` e `CORS_ORIGIN_3` com esses domínios.
+
 ### Deploy Frontend (Vercel)
 
 1. Importar o repositório do GitHub.
 2. Framework: Vite; Build: `npm run build`; Output: `dist`.
 3. Variáveis: `VITE_API_BASE=<URL_DO_BACKEND>`, `VITE_ADMIN_USERNAME=professor`, `VITE_ADMIN_KEY=0808`.
 4. Redeploy e testar `https://SEU_SITE.vercel.app/admin`.
+
+### Troubleshooting (produção)
+
+- Foto não salva no site:
+  - Verifique se o backend está ativo e acessível (`GET /health`).
+  - Confirme `VITE_API_BASE` no Vercel apontando para o backend.
+  - Confirme CORS no backend: `CORS_ORIGIN` deve ser exatamente o domínio do seu site.
+  - No DevTools → Network, verifique `POST /api/profile` com status `200` e resposta `{ ok: true }`.
+  - Se houver `CORS error`, ajuste `CORS_ORIGIN` (e `CORS_ORIGIN_2/3` para previews) e redeploy no backend.
+
+> Dica: em desenvolvimento o app usa `http://localhost:5175`. Em produção, sempre use `VITE_API_BASE` para evitar fallbacks em hosts suspensos.
 
 ### Envio automático para WhatsApp
 
