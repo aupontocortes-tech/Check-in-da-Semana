@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const [newPhoto, setNewPhoto] = useState<string | null>(null)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [updateNotice, setUpdateNotice] = useState('')
+  const [apiBase, setApiBase] = useState('')
 
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -46,6 +47,11 @@ export default function AdminDashboard() {
         setAdminWhatsapp('')
       }
     })()
+    // Carrega API_BASE configurável em produção
+    try {
+      const rt = localStorage.getItem('API_BASE') || ''
+      setApiBase(rt)
+    } catch {}
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {
@@ -156,6 +162,16 @@ export default function AdminDashboard() {
     } finally {
       setSavingPhoto(false)
     }
+  }
+
+  const saveApiBase = () => {
+    const v = apiBase.trim()
+    try { localStorage.setItem('API_BASE', v) } catch {}
+    setUpdateNotice('API configurada. Recarregando para aplicar...')
+    setTimeout(() => {
+      setUpdateNotice('')
+      window.location.reload()
+    }, 1000)
   }
 
   const groupedByNome = useMemo(() => {
@@ -404,6 +420,22 @@ export default function AdminDashboard() {
               >
                 Salvar
               </button>
+            </div>
+            <hr className="my-4 border-white/10" />
+            <div className="grid gap-2">
+              <label className="grid gap-1">
+                <span className="text-sm opacity-80">API Base (produção)</span>
+                <input
+                  className="px-3 py-2 rounded bg-white/5 border border-white/10"
+                  placeholder="https://seu-backend.up.railway.app"
+                  value={apiBase}
+                  onChange={(e) => setApiBase(e.target.value)}
+                />
+                <span className="text-xs opacity-70">Defina a URL do backend; será aplicada após recarregar.</span>
+              </label>
+              <div>
+                <button className="px-3 py-2 rounded bg-white/10 hover:bg-white/20" onClick={saveApiBase}>Salvar API</button>
+              </div>
             </div>
           </section>
 

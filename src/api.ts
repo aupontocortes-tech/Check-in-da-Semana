@@ -4,6 +4,13 @@ import { CheckinFormData } from './types'
 // Resolve possíveis bases da API: env, localhost (dev) e Render (produção)
 const CANDIDATE_BASES: string[] = (() => {
   const bases: string[] = []
+  // Override em runtime via localStorage para produção (permite configurar sem redeploy)
+  try {
+    if (typeof window !== 'undefined') {
+      const rt = (window.localStorage.getItem('API_BASE') || '').trim()
+      if (rt) bases.push(rt)
+    }
+  } catch {}
   const envBase = (import.meta.env.VITE_API_BASE as string) || ''
   if (typeof window !== 'undefined') {
     const host = window.location.host || ''
