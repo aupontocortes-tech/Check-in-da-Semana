@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 import { CheckinFormData } from './types'
 
 // Resolve possíveis bases da API: env, localhost (dev) e Render (produção)
@@ -21,11 +21,11 @@ const CANDIDATE_BASES: string[] = (() => {
   return Array.from(new Set(bases.filter(Boolean)))
 })()
 
-async function getWithFallback<T>(path: string): Promise<T> {
+async function getWithFallback<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
   let lastErr: any = null
   for (const base of CANDIDATE_BASES) {
     try {
-      const res = await axios.get(`${base}${path}`, { timeout: 5000 })
+      const res = await axios.get(`${base}${path}`, { timeout: 5000, ...(config || {}) })
       return res.data as T
     } catch (e) {
       lastErr = e
@@ -81,8 +81,14 @@ export async function submitCheckin(data: CheckinFormData) {
 
 export async function listCheckins(params?: { nome?: string; from?: string; to?: string; adminKey?: string }) {
   try {
-    const res = await getWithFallback<CheckinFormData[]>(`/api/checkins`)
-    // Nota: se precisar de params no backend, ajustar para incluir { params } no getWithFallback
+    const res = await getWithFallback<CheckinFormData[]>(`/api/checkins`, {
+      params: {
+        adminKey: params?.adminKey,
+        nome: params?.nome,
+        from: params?.from,
+        to: params?.to,
+      }
+    })
     return res as CheckinFormData[]
   } catch (_) {
     // Fallback: sem backend, ler do localStorage
