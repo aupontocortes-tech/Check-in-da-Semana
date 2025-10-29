@@ -86,7 +86,8 @@ export default function CheckinForm() {
 
       // 2) Envia somente via WhatsApp: desativa e-mail; abre Click-to-Chat SEMPRE
       const adminEmail = '' // WhatsApp-only: não enviar e-mail
-      const adminWhatsappRaw = adminWhatsappFromProfile || localStorage.getItem('ADMIN_WHATSAPP') || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || ''
+      // Sempre usa o perfil do servidor para garantir consistência em todos os links
+      const adminWhatsappRaw = adminWhatsappFromProfile || ''
       const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '') // sanitiza para formato esperado do wa.me
       // Chama backend para log/webhook/Cloud API (se configurado), mas não bloqueia UX
       try {

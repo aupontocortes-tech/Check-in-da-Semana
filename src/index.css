@@ -1,3 +1,6 @@
+/* Fonte cursiva para o título (Google Fonts) deve vir primeiro */
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,9 +8,6 @@
 :root {
   color-scheme: dark;
 }
-
-/* Fonte cursiva para o título (Google Fonts) */
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
 .script-title {
   font-family: 'Great Vibes', cursive;

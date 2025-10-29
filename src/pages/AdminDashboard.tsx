@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [sitePhoto, setSitePhoto] = useState<string | null>(null)
   const [newPhoto, setNewPhoto] = useState<string | null>(null)
   const [savingPhoto, setSavingPhoto] = useState(false)
+  const [updateNotice, setUpdateNotice] = useState('')
 
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -36,13 +37,13 @@ export default function AdminDashboard() {
       try {
         const p = await getProfile()
         setSitePhoto(p.photo || null)
-        setAdminEmail((p.email || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '').trim())
-        setAdminWhatsapp((p.whatsapp || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || '').trim())
+        // Usa exclusivamente os valores do servidor
+        setAdminEmail((p.email || '').trim())
+        setAdminWhatsapp((p.whatsapp || '').trim())
       } catch {
-        const storedEmail = localStorage.getItem('ADMIN_EMAIL')
-        setAdminEmail(storedEmail || (import.meta.env.VITE_DEFAULT_ADMIN_EMAIL as string) || '')
-        const storedWhatsapp = localStorage.getItem('ADMIN_WHATSAPP')
-        setAdminWhatsapp(storedWhatsapp || (import.meta.env.VITE_DEFAULT_ADMIN_WHATSAPP as string) || '')
+        // Em falha, zera para evitar valores antigos
+        setAdminEmail('')
+        setAdminWhatsapp('')
       }
     })()
   }, [])
@@ -109,7 +110,8 @@ export default function AdminDashboard() {
       if (!resp.ok) throw new Error('invalid')
       setSitePhoto(newPhoto || null)
       setNewPhoto(null)
-      alert('Foto do site atualizada!')
+      setUpdateNotice('Foto atualizada. Todos os links exibirão a nova foto.')
+      setTimeout(() => setUpdateNotice(''), 5000)
     } catch (e) {
       alert('Erro ao salvar a foto.')
     } finally {
@@ -269,6 +271,11 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 space-y-6">
       <h2 className="text-2xl font-bold">Painel de Administração</h2>
+      {updateNotice && (
+        <div className="px-3 py-2 rounded bg-green-600/20 border border-green-500/40 text-green-100">
+          {updateNotice}
+        </div>
+      )}
       <div className="flex items-end justify-between flex-wrap gap-2">
         <Link to="/" className="brand-btn">Voltar</Link>
         <div className="flex items-end gap-3 flex-wrap">
@@ -352,7 +359,8 @@ export default function AdminDashboard() {
                       localStorage.setItem('ADMIN_EMAIL', adminEmail)
                       localStorage.setItem('ADMIN_WHATSAPP', adminWhatsapp)
                     } catch {}
-                    alert('Contato salvo!')
+                    setUpdateNotice('Configurações salvas. Todos os links foram atualizados.')
+                    setTimeout(() => setUpdateNotice(''), 5000)
                   } catch {
                     alert('Erro ao salvar contato')
                   }

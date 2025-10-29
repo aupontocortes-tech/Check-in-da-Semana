@@ -75,6 +75,10 @@ function writeProfile(patch) {
 
 // Público: obter foto atual
 app.get('/api/profile', (_req, res) => {
+  // Evita cache para garantir que todas as páginas/leads vejam o perfil atualizado
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
   res.json(readProfile())
 })
 
