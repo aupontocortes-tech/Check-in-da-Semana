@@ -29,6 +29,26 @@ const CANDIDATE_BASES: string[] = (() => {
   return Array.from(new Set(bases.filter(Boolean)))
 })()
 
+// Utils para inspeção/diagóstico da API em tempo de execução
+export function getApiBases(): string[] {
+  return CANDIDATE_BASES.slice()
+}
+
+export function getActiveApiBase(): string | undefined {
+  return CANDIDATE_BASES[0]
+}
+
+export async function pingHealth(base?: string): Promise<boolean> {
+  const b = base || CANDIDATE_BASES[0]
+  if (!b) return false
+  try {
+    const res = await axios.get(`${b}/health`, { timeout: 4000 })
+    return Boolean((res.data as any)?.ok)
+  } catch {
+    return false
+  }
+}
+
 async function getWithFallback<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
   let lastErr: any = null
   for (const base of CANDIDATE_BASES) {

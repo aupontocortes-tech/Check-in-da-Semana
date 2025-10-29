@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile } from '../api'
+import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile, getActiveApiBase, pingHealth } from '../api'
 import type { CheckinFormData, SleepOption, EnergyOption, MotivationOption } from '../types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, Legend, CartesianGrid, ResponsiveContainer } from 'recharts'
 
@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [updateNotice, setUpdateNotice] = useState('')
   const [apiBase, setApiBase] = useState('')
+  const [apiInfo, setApiInfo] = useState<{ base?: string; ok?: boolean }>({})
 
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -52,6 +53,12 @@ export default function AdminDashboard() {
       const rt = localStorage.getItem('API_BASE') || ''
       setApiBase(rt)
     } catch {}
+    // Diagnóstico inicial da API
+    ;(async () => {
+      const base = getActiveApiBase()
+      const ok = await pingHealth(base)
+      setApiInfo({ base, ok })
+    })()
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {
@@ -435,6 +442,19 @@ export default function AdminDashboard() {
               </label>
               <div>
                 <button className="px-3 py-2 rounded bg-white/10 hover:bg-white/20" onClick={saveApiBase}>Salvar API</button>
+                <span className="ml-3 text-xs opacity-80">Atual: {apiInfo.base || '—'} {typeof apiInfo.ok === 'boolean' ? (apiInfo.ok ? '(OK)' : '(OFFLINE)') : ''}</span>
+                <button
+                  className="ml-3 px-3 py-2 rounded bg-white/10 hover:bg-white/20"
+                  onClick={async () => {
+                    const base = getActiveApiBase()
+                    const ok = await pingHealth(base)
+                    setApiInfo({ base, ok })
+                    setUpdateNotice(ok ? 'API está respondendo.' : 'API não respondeu. Verifique a URL no campo acima.')
+                    setTimeout(() => setUpdateNotice(''), 5000)
+                  }}
+                >
+                  Testar API
+                </button>
               </div>
             </div>
           </section>
