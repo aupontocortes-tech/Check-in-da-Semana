@@ -1,6 +1,6 @@
 # Check-in da Semana 💥 | Naty Personal
 
-App React + Tailwind para formulário público de check-in e painel administrativo privado, com backend Express + SQLite.
+App React + Tailwind para formulário público de check-in e painel administrativo privado, com backend Express + Postgres (Neon) e fallback para filesystem.
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/aupontocortes-tech/Check-in-da-Semana)
 
@@ -15,8 +15,9 @@ App React + Tailwind para formulário público de check-in e painel administrati
 ## Configuração
 
 - Crie um arquivo `.env` baseado em `.env.example` para definir credenciais e variáveis.
+- Banco de dados: configure `DATABASE_URL` (Neon Postgres). Se não definido, o backend usa fallback local em `data/`.
 - Para produção, defina em seu provedor:
-  - Backend: `ADMIN_USERNAME`, `ADMIN_KEY`, `CORS_ORIGIN`, `PORT` e, opcionalmente, `SMTP_*`, `EMAIL_FROM`, `WABA_*`.
+  - Backend: `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_KEY`, `CORS_ORIGIN`, `PORT` e, opcionalmente, `SMTP_*`, `EMAIL_FROM`, `WABA_*`, `REPORT_WEBHOOK_URL`.
   - Frontend (Vercel): `VITE_API_BASE`, `VITE_ADMIN_USERNAME`, `VITE_ADMIN_KEY`.
 
 > Dica: se as variáveis não forem definidas, o app usa padrão `professor` / `0808` para login de administrador.
@@ -27,13 +28,14 @@ App React + Tailwind para formulário público de check-in e painel administrati
 2. Render detecta `render.yaml` e cria o serviço Web automaticamente.
 3. Iniciar com plano gratuito, start: `npm start`.
 4. Ajustar `CORS_ORIGIN` para seu domínio Vercel.
-5. Copiar a URL pública (ex.: `https://seu-backend.onrender.com`).
+5. Configurar `DATABASE_URL` como Secret (Neon) nas Environment Variables.
+6. Copiar a URL pública (ex.: `https://seu-backend.onrender.com`).
 
 ### Deploy Backend (Railway)
 
 1. Crie um projeto no Railway e conecte seu repositório.
 2. Railway detecta Node e usa `npm start` (já presente em `package.json`).
-3. Defina variáveis de ambiente: `ADMIN_USERNAME`, `ADMIN_KEY`, `CORS_ORIGIN` (domínio do Vercel) e, opcionalmente, `SMTP_*`, `EMAIL_FROM`.
+3. Defina variáveis de ambiente: `DATABASE_URL`, `ADMIN_USERNAME`, `ADMIN_KEY`, `CORS_ORIGIN` (domínio do Vercel) e, opcionalmente, `SMTP_*`, `EMAIL_FROM`.
 4. O Railway fornece `PORT` automaticamente — o backend já respeita `process.env.PORT`.
 5. Após deploy, copie a URL pública (ex.: `https://seu-backend.up.railway.app`).
 6. Teste saúde do serviço: `GET https://SEU_BACKEND/health` deve responder `{ ok: true }`.
@@ -46,6 +48,19 @@ App React + Tailwind para formulário público de check-in e painel administrati
 2. Framework: Vite; Build: `npm run build`; Output: `dist`.
 3. Variáveis: `VITE_API_BASE=<URL_DO_BACKEND>`, `VITE_ADMIN_USERNAME=professor`, `VITE_ADMIN_KEY=0808`.
 4. Redeploy e testar `https://SEU_SITE.vercel.app/admin`.
+
+### Armazenamento de dados
+
+- Postgres (Neon):
+  - `checkins_app`: armazena cada envio do formulário em `payload JSONB` com `created_at`.
+  - `profile_app`: armazena o perfil público (foto, e-mail, WhatsApp) em `payload JSONB`.
+- Fallback local: se `DATABASE_URL` não estiver configurado, o backend usa `data/checkins.json` e `data/profile.json`.
+- Migração automática: na primeira inicialização com Postgres, o backend importa o conteúdo de `data/profile.json` para `profile_app` se a tabela estiver vazia.
+
+### Health e observabilidade
+
+- `GET /health` responde com `{ ok: true, ts, db }`.
+- Campo `db` inclui `enabled`, `checkins_count` e `profile_rows` quando Postgres está configurado.
 
 ### Troubleshooting (produção)
 

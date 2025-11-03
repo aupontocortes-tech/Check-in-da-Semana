@@ -7,6 +7,10 @@ services:
     autoDeploy: true
     plan: free
     envVars:
+      # Defina DATABASE_URL no dashboard do Render com sua string do Neon
+      # Exemplo: postgres://usuario:senha@host.neon.tech/neondb?sslmode=require
+      - key: DATABASE_URL
+        value: ""
       - key: ADMIN_USERNAME
         value: professor
       - key: ADMIN_KEY

@@ -5,6 +5,7 @@ import fs from 'fs'
 import PDFDocument from 'pdfkit'
 import dotenv from 'dotenv'
 import nodemailer from 'nodemailer'
+import { pool, initSchema, getAllCheckins as dbGetAllCheckins, insertCheckin as dbInsertCheckin, clearCheckins as dbClearCheckins, getProfileDb as dbGetProfile, writeProfileDb as dbWriteProfile } from './db.js'
 
 dotenv.config()
 
@@ -48,11 +49,26 @@ function appendOne(obj) {
   fs.writeFileSync(storePath, JSON.stringify(list, null, 2), 'utf-8')
 }
 
-app.post('/api/checkin', (req, res) => {
+async function readAllUnified() {
+  if (pool) return await dbGetAllCheckins()
+  return readAll()
+}
+
+async function appendOneUnified(obj) {
+  if (pool) return await dbInsertCheckin(obj)
+  return appendOne(obj)
+}
+
+app.post('/api/checkin', async (req, res) => {
   const data = req.body || {}
   data.createdAt = new Date().toISOString()
-  appendOne(data)
-  res.json({ ok: true })
+  try {
+    await appendOneUnified(data)
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('Erro ao salvar check-in', e)
+    res.status(500).json({ error: 'save_failed' })
+  }
 })
 
 // Perfil público do site (foto)
@@ -76,20 +92,41 @@ function writeProfile(patch) {
   fs.writeFileSync(profilePath, JSON.stringify(next, null, 2), 'utf-8')
 }
 
+async function readProfileUnified() {
+  // Usa Postgres se configurado, com fallback para filesystem
+  if (pool) {
+    try { return await dbGetProfile() } catch (e) { console.warn('Perfil DB indisponível, fallback FS', e) }
+  }
+  return readProfile()
+}
+
+async function writeProfileUnified(patch) {
+  // Usa Postgres se configurado, com fallback para filesystem
+  if (pool) {
+    try { return await dbWriteProfile(patch) } catch (e) { console.warn('Gravação perfil DB falhou, fallback FS', e) }
+  }
+  return writeProfile(patch)
+}
+
 // Público: obter foto atual
-app.get('/api/profile', (_req, res) => {
+app.get('/api/profile', async (_req, res) => {
   // Evita cache para garantir que todas as páginas/leads vejam o perfil atualizado
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   res.setHeader('Pragma', 'no-cache')
   res.setHeader('Expires', '0')
-  res.json(readProfile())
+  try {
+    const p = await readProfileUnified()
+    res.json(p)
+  } catch (e) {
+    res.status(500).json({ error: 'read_failed' })
+  }
 })
 
 // Público: atualizar foto (sem senha)
-app.post('/api/profile', (req, res) => {
+app.post('/api/profile', async (req, res) => {
   const { photo, email, whatsapp } = req.body || {}
   try {
-    writeProfile({ photo, email, whatsapp })
+    await writeProfileUnified({ photo, email, whatsapp })
     res.json({ ok: true })
   } catch (e) {
     console.warn('Falha ao salvar perfil (público)', e)
@@ -98,14 +135,14 @@ app.post('/api/profile', (req, res) => {
 })
 
 // Admin: atualizar foto (exige ADMIN_KEY)
-app.post('/api/admin/profile', (req, res) => {
+app.post('/api/admin/profile', async (req, res) => {
   const { adminKey, photo, email, whatsapp } = req.body || {}
   const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!adminKey || String(adminKey) !== expectedPass) {
     return res.status(401).json({ error: 'unauthorized' })
   }
   try {
-    writeProfile({ photo, email, whatsapp })
+    await writeProfileUnified({ photo, email, whatsapp })
     res.json({ ok: true })
   } catch (e) {
     console.warn('Falha ao salvar perfil', e)
@@ -128,12 +165,18 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ ok: true })
 })
 
-app.get('/api/checkins', (req, res) => {
+app.get('/api/checkins', async (req, res) => {
   const adminKey = req.query.adminKey
   if (!adminKey || String(adminKey) !== (process.env.ADMIN_KEY || '0808')) {
     return res.status(401).json({ error: 'unauthorized' })
   }
-  let rows = readAll()
+  let rows
+  try {
+    rows = await readAllUnified()
+  } catch (e) {
+    console.error('Erro ao obter checkins', e)
+    return res.status(500).json({ error: 'read_failed' })
+  }
   const nome = req.query.nome ? String(req.query.nome) : null
   const from = req.query.from ? String(req.query.from) : null
   const to = req.query.to ? String(req.query.to) : null
@@ -144,15 +187,19 @@ app.get('/api/checkins', (req, res) => {
 })
 
 // Admin: limpar todos os dados (exige apenas a senha ADMIN_KEY)
-app.post('/api/admin/clear', (req, res) => {
+app.post('/api/admin/clear', async (req, res) => {
   const { adminKey } = req.body || {}
   const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!adminKey || String(adminKey) !== expectedPass) {
     return res.status(401).json({ error: 'unauthorized' })
   }
-  const previous = readAll()
   try {
-    fs.writeFileSync(storePath, '[]', 'utf-8')
+    let previous = await readAllUnified()
+    if (pool) {
+      await dbClearCheckins()
+    } else {
+      fs.writeFileSync(storePath, '[]', 'utf-8')
+    }
     return res.json({ ok: true, deleted: previous.length })
   } catch (e) {
     console.warn('Falha ao limpar dados', e)
@@ -160,7 +207,7 @@ app.post('/api/admin/clear', (req, res) => {
   }
 })
 
-app.post('/api/report/pdf', (req, res) => {
+app.post('/api/report/pdf', async (req, res) => {
   const { nome, semanaTexto } = req.body || {}
   const doc = new PDFDocument()
   res.setHeader('Content-Type', 'application/pdf')
@@ -170,7 +217,7 @@ app.post('/api/report/pdf', (req, res) => {
   doc.fontSize(14).text(`Aluna: ${nome || 'N/A'}`)
   doc.text(`Semana: ${semanaTexto || 'N/A'}`)
   doc.moveDown()
-  const rows = readAll().filter(r => !nome || r.nomeCompleto === nome)
+  const rows = (await readAllUnified()).filter(r => !nome || r.nomeCompleto === nome)
   const latest = rows[0]
   if (latest) {
     doc.text(`Treinos de força: ${latest.treinosForca}`)
@@ -280,8 +327,33 @@ app.post('/api/report/send', async (req, res) => {
 const port = process.env.PORT || 5175
 app.listen(port, () => {
   console.log(`API server running at http://localhost:${port}`)
+  if (pool) {
+    initSchema().then(() => {
+      console.log('Postgres habilitado e pronto')
+    }).catch((err) => {
+      console.error('Falha ao inicializar schema', err)
+    })
+  } else {
+    console.warn('Postgres não configurado: usando filesystem')
+  }
 })
 // Healthcheck para deploys
-app.get('/health', (_req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() })
+app.get('/health', async (_req, res) => {
+  const base = { ok: true, ts: new Date().toISOString() }
+  if (!pool) return res.json({ ...base, db: { enabled: false } })
+  try {
+    const { rows: r1 } = await pool.query('SELECT COUNT(*)::int AS c FROM checkins_app')
+    const { rows: r2 } = await pool.query('SELECT COUNT(*)::int AS c FROM profile_app')
+    return res.json({
+      ...base,
+      db: {
+        enabled: true,
+        checkins_count: r1?.[0]?.c ?? 0,
+        profile_rows: r2?.[0]?.c ?? 0,
+      },
+    })
+  } catch (e) {
+    console.warn('Health DB erro', e)
+    return res.json({ ...base, db: { enabled: true, error: 'query_failed' } })
+  }
 })
