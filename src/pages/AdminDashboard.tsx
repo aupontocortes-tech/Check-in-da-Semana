@@ -326,36 +326,6 @@ export default function AdminDashboard() {
         <input type="text" className="px-3 py-2 rounded bg-white border border-gray-200 w-full text-black" placeholder="Usuário (ex: professor)" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} />
         <input type="password" className="px-3 py-2 rounded bg-white border border-gray-200 w-full text-black" placeholder="Senha" value={adminKey} onChange={(e) => setAdminKey(e.target.value)} />
         <button className="brand-btn" onClick={handleLogin}>Entrar</button>
-        <div className="mt-6 p-3 rounded bg-white/5 border border-white/10">
-          <h3 className="font-semibold mb-2">Diagnóstico da API</h3>
-          <p className="text-sm opacity-80 mb-2">Se estiver no Vercel e a área não abrir, defina abaixo a URL do backend (Render/Railway) e teste a conexão.</p>
-          <label className="grid gap-1">
-            <span className="text-sm opacity-80">API Base (produção)</span>
-            <input
-              className="px-3 py-2 rounded bg-white/5 border border-white/10"
-              placeholder="https://seu-backend.up.railway.app"
-              value={apiBase}
-              onChange={(e) => setApiBase(e.target.value)}
-            />
-            <span className="text-xs opacity-70">Defina a URL do backend; será aplicada após recarregar.</span>
-          </label>
-          <div className="mt-2">
-            <button className="px-3 py-2 rounded bg-white/10 hover:bg-white/20" onClick={saveApiBase}>Salvar API</button>
-            <span className="ml-3 text-xs opacity-80">Atual: {apiInfo.base || '—'} {typeof apiInfo.ok === 'boolean' ? (apiInfo.ok ? '(OK)' : '(OFFLINE)') : ''}</span>
-            <button
-              className="ml-3 px-3 py-2 rounded bg-white/10 hover:bg-white/20"
-              onClick={async () => {
-                const base = getActiveApiBase()
-                const ok = await pingHealth(base)
-                setApiInfo({ base, ok })
-                setUpdateNotice(ok ? 'API está respondendo.' : 'API não respondeu. Verifique a URL no campo acima.')
-                setTimeout(() => setUpdateNotice(''), 5000)
-              }}
-            >
-              Testar API
-            </button>
-          </div>
-        </div>
       </div>
     )
   }
