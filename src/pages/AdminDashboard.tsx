@@ -74,9 +74,9 @@ export default function AdminDashboard() {
     try {
       const resp = await adminLogin({ username: user, password: pass })
       if (!resp.ok) throw new Error('invalid')
-      // Não persistir sessão: exigir login sempre
-      await fetchData(pass)
+      // Entra no painel imediatamente; busca dados em segundo plano
       setOk(true)
+      try { await fetchData(pass) } catch {}
     } catch (e) {
       alert('Usuário ou senha inválidos')
       setOk(false)
