@@ -5,8 +5,18 @@ import fs from 'fs'
 import PDFDocument from 'pdfkit'
 import dotenv from 'dotenv'
 import nodemailer from 'nodemailer'
+import { initDb, seedFromFilesIfEmpty, isDbEnabled, saveCheckin, listCheckinsDb, getProfileDb, setProfileDb, clearAllDb } from './db.js'
 
 dotenv.config()
+
+// Inicializa DB (se DATABASE_URL estiver definido) e migra dados locais, sem bloquear início do servidor
+try {
+  await initDb()
+  await seedFromFilesIfEmpty()
+  console.log(isDbEnabled() ? 'Postgres habilitado: tabelas prontas' : 'Postgres não configurado: usando filesystem')
+} catch (e) {
+  console.warn('Init DB falhou (continuando com filesystem):', e?.message || e)
+}
 
 const app = express()
 // Aumenta limite para upload de foto em base64 (data URL)
@@ -37,59 +47,41 @@ if (!fs.existsSync(storePath)) fs.writeFileSync(storePath, '[]', 'utf-8')
 const profilePath = path.join(dataDir, 'profile.json')
 if (!fs.existsSync(profilePath)) fs.writeFileSync(profilePath, JSON.stringify({ photo: null, email: '', whatsapp: '' }, null, 2), 'utf-8')
 
-function readAll() {
-  const raw = fs.readFileSync(storePath, 'utf-8')
-  try { return JSON.parse(raw) } catch { return [] }
-}
-
-function appendOne(obj) {
-  const list = readAll()
-  list.unshift(obj)
-  fs.writeFileSync(storePath, JSON.stringify(list, null, 2), 'utf-8')
-}
-
-app.post('/api/checkin', (req, res) => {
+app.post('/api/checkin', async (req, res) => {
   const data = req.body || {}
   data.createdAt = new Date().toISOString()
-  appendOne(data)
-  res.json({ ok: true })
+  try {
+    await saveCheckin(data)
+    res.json({ ok: true })
+  } catch (e) {
+    console.warn('Falha ao salvar checkin', e)
+    res.status(500).json({ error: 'save_failed' })
+  }
 })
 
 // Perfil público do site (foto)
-function readProfile() {
-  try {
-    const raw = fs.readFileSync(profilePath, 'utf-8')
-    const json = JSON.parse(raw)
-    return { photo: json.photo || null, email: json.email || '', whatsapp: json.whatsapp || '' }
-  } catch {
-    return { photo: null, email: '', whatsapp: '' }
-  }
-}
-
-function writeProfile(patch) {
-  const current = readProfile()
-  const next = {
-    photo: patch && 'photo' in patch ? (patch.photo || null) : current.photo,
-    email: patch && 'email' in patch ? (patch.email || '') : current.email,
-    whatsapp: patch && 'whatsapp' in patch ? (patch.whatsapp || '') : current.whatsapp,
-  }
-  fs.writeFileSync(profilePath, JSON.stringify(next, null, 2), 'utf-8')
-}
+// Perfil é lido/salvo via DB com fallback para filesystem (implementado em db.js)
 
 // Público: obter foto atual
-app.get('/api/profile', (_req, res) => {
+app.get('/api/profile', async (_req, res) => {
   // Evita cache para garantir que todas as páginas/leads vejam o perfil atualizado
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   res.setHeader('Pragma', 'no-cache')
   res.setHeader('Expires', '0')
-  res.json(readProfile())
+  try {
+    const p = await getProfileDb()
+    res.json(p)
+  } catch (e) {
+    console.warn('Falha ao ler perfil', e)
+    res.status(500).json({ error: 'read_failed' })
+  }
 })
 
 // Público: atualizar foto (sem senha)
-app.post('/api/profile', (req, res) => {
+app.post('/api/profile', async (req, res) => {
   const { photo, email, whatsapp } = req.body || {}
   try {
-    writeProfile({ photo, email, whatsapp })
+    await setProfileDb({ photo, email, whatsapp })
     res.json({ ok: true })
   } catch (e) {
     console.warn('Falha ao salvar perfil (público)', e)
@@ -98,14 +90,14 @@ app.post('/api/profile', (req, res) => {
 })
 
 // Admin: atualizar foto (exige ADMIN_KEY)
-app.post('/api/admin/profile', (req, res) => {
+app.post('/api/admin/profile', async (req, res) => {
   const { adminKey, photo, email, whatsapp } = req.body || {}
   const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!adminKey || String(adminKey) !== expectedPass) {
     return res.status(401).json({ error: 'unauthorized' })
   }
   try {
-    writeProfile({ photo, email, whatsapp })
+    await setProfileDb({ photo, email, whatsapp })
     res.json({ ok: true })
   } catch (e) {
     console.warn('Falha ao salvar perfil', e)
@@ -128,39 +120,40 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ ok: true })
 })
 
-app.get('/api/checkins', (req, res) => {
+app.get('/api/checkins', async (req, res) => {
   const adminKey = req.query.adminKey
   if (!adminKey || String(adminKey) !== (process.env.ADMIN_KEY || '0808')) {
     return res.status(401).json({ error: 'unauthorized' })
   }
-  let rows = readAll()
   const nome = req.query.nome ? String(req.query.nome) : null
   const from = req.query.from ? String(req.query.from) : null
   const to = req.query.to ? String(req.query.to) : null
-  if (nome) rows = rows.filter(r => r.nomeCompleto?.toLowerCase().includes(nome.toLowerCase()))
-  if (from) rows = rows.filter(r => new Date(r.createdAt) >= new Date(from))
-  if (to) rows = rows.filter(r => new Date(r.createdAt) <= new Date(to))
-  res.json(rows)
+  try {
+    const rows = await listCheckinsDb({ nome, from, to })
+    res.json(rows)
+  } catch (e) {
+    console.warn('Falha ao listar checkins', e)
+    res.status(500).json({ error: 'list_failed' })
+  }
 })
 
 // Admin: limpar todos os dados (exige apenas a senha ADMIN_KEY)
-app.post('/api/admin/clear', (req, res) => {
+app.post('/api/admin/clear', async (req, res) => {
   const { adminKey } = req.body || {}
   const expectedPass = process.env.ADMIN_KEY || '0808'
   if (!adminKey || String(adminKey) !== expectedPass) {
     return res.status(401).json({ error: 'unauthorized' })
   }
-  const previous = readAll()
   try {
-    fs.writeFileSync(storePath, '[]', 'utf-8')
-    return res.json({ ok: true, deleted: previous.length })
+    const n = await clearAllDb()
+    return res.json({ ok: true, deleted: n })
   } catch (e) {
     console.warn('Falha ao limpar dados', e)
     return res.status(500).json({ error: 'clear_failed' })
   }
 })
 
-app.post('/api/report/pdf', (req, res) => {
+app.post('/api/report/pdf', async (req, res) => {
   const { nome, semanaTexto } = req.body || {}
   const doc = new PDFDocument()
   res.setHeader('Content-Type', 'application/pdf')
@@ -170,7 +163,8 @@ app.post('/api/report/pdf', (req, res) => {
   doc.fontSize(14).text(`Aluna: ${nome || 'N/A'}`)
   doc.text(`Semana: ${semanaTexto || 'N/A'}`)
   doc.moveDown()
-  const rows = readAll().filter(r => !nome || r.nomeCompleto === nome)
+  const all = await listCheckinsDb()
+  const rows = (all || []).filter(r => !nome || r.nomeCompleto === nome)
   const latest = rows[0]
   if (latest) {
     doc.text(`Treinos de força: ${latest.treinosForca}`)
