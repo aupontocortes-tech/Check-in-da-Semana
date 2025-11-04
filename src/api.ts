@@ -115,6 +115,28 @@ export async function submitCheckin(data: CheckinFormData) {
   }
 }
 
+// Tenta sincronizar check-ins salvos offline (localStorage) para o backend
+export async function syncLocalCheckins(): Promise<number> {
+  const key = 'CHECKINS'
+  let arr: any[] = []
+  try { arr = JSON.parse(localStorage.getItem(key) || '[]') || [] } catch { arr = [] }
+  if (!arr.length) return 0
+
+  let synced = 0
+  const remaining: any[] = []
+  for (const item of arr) {
+    try {
+      await postWithFallback(`/api/checkin`, item)
+      synced++
+    } catch {
+      // Mantém itens que não conseguiram sincronizar
+      remaining.push(item)
+    }
+  }
+  try { localStorage.setItem(key, JSON.stringify(remaining)) } catch {}
+  return synced
+}
+
 export async function listCheckins(params?: { nome?: string; from?: string; to?: string; adminKey?: string }) {
   try {
     const res = await getWithFallback<CheckinFormData[]>(`/api/checkins`, {

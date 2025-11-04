@@ -1,10 +1,17 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
 import CheckinForm from './pages/CheckinForm'
 import AdminDashboard from './pages/AdminDashboard'
 import Confirmation from './pages/Confirmation'
+import { syncLocalCheckins } from './api'
 
 function App() {
+  useEffect(() => {
+    // Sincroniza em segundo plano check-ins que foram salvos offline
+    ;(async () => {
+      try { await syncLocalCheckins() } catch {}
+    })()
+  }, [])
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <header className="bg-gradient-to-r from-brand to-brand-dark border-b border-gray-800 shadow-brand">

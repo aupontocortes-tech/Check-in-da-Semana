@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile, getActiveApiBase, pingHealth } from '../api'
+import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile } from '../api'
 import type { CheckinFormData, SleepOption, EnergyOption, MotivationOption } from '../types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, Legend, CartesianGrid, ResponsiveContainer } from 'recharts'
 
@@ -28,8 +28,7 @@ export default function AdminDashboard() {
   const [newPhoto, setNewPhoto] = useState<string | null>(null)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [updateNotice, setUpdateNotice] = useState('')
-  const [apiBase, setApiBase] = useState('')
-  const [apiInfo, setApiInfo] = useState<{ base?: string; ok?: boolean }>({})
+  
 
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -48,17 +47,7 @@ export default function AdminDashboard() {
         setAdminWhatsapp('')
       }
     })()
-    // Carrega API_BASE configurável em produção
-    try {
-      const rt = localStorage.getItem('API_BASE') || ''
-      setApiBase(rt)
-    } catch {}
-    // Diagnóstico inicial da API
-    ;(async () => {
-      const base = getActiveApiBase()
-      const ok = await pingHealth(base)
-      setApiInfo({ base, ok })
-    })()
+    
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {
@@ -156,6 +145,10 @@ export default function AdminDashboard() {
   }
 
   const saveSitePhoto = async () => {
+    if (!newPhoto) {
+      alert('Selecione uma imagem antes de salvar.')
+      return
+    }
     setSavingPhoto(true)
     try {
       const resp = await updateProfile({ photo: newPhoto })
@@ -171,15 +164,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const saveApiBase = () => {
-    const v = apiBase.trim()
-    try { localStorage.setItem('API_BASE', v) } catch {}
-    setUpdateNotice('API configurada. Recarregando para aplicar...')
-    setTimeout(() => {
-      setUpdateNotice('')
-      window.location.reload()
-    }, 1000)
-  }
+  
 
   const groupedByNome = useMemo(() => {
     const map: Record<string, number> = {}
@@ -428,35 +413,7 @@ export default function AdminDashboard() {
                 Salvar
               </button>
             </div>
-            <hr className="my-4 border-white/10" />
-            <div className="grid gap-2">
-              <label className="grid gap-1">
-                <span className="text-sm opacity-80">API Base (produção)</span>
-                <input
-                  className="px-3 py-2 rounded bg-white/5 border border-white/10"
-                  placeholder="https://seu-backend.up.railway.app"
-                  value={apiBase}
-                  onChange={(e) => setApiBase(e.target.value)}
-                />
-                <span className="text-xs opacity-70">Defina a URL do backend; será aplicada após recarregar.</span>
-              </label>
-              <div>
-                <button className="px-3 py-2 rounded bg-white/10 hover:bg-white/20" onClick={saveApiBase}>Salvar API</button>
-                <span className="ml-3 text-xs opacity-80">Atual: {apiInfo.base || '—'} {typeof apiInfo.ok === 'boolean' ? (apiInfo.ok ? '(OK)' : '(OFFLINE)') : ''}</span>
-                <button
-                  className="ml-3 px-3 py-2 rounded bg-white/10 hover:bg-white/20"
-                  onClick={async () => {
-                    const base = getActiveApiBase()
-                    const ok = await pingHealth(base)
-                    setApiInfo({ base, ok })
-                    setUpdateNotice(ok ? 'API está respondendo.' : 'API não respondeu. Verifique a URL no campo acima.')
-                    setTimeout(() => setUpdateNotice(''), 5000)
-                  }}
-                >
-                  Testar API
-                </button>
-              </div>
-            </div>
+            
           </section>
 
           {/* Foto fixa do site */}
@@ -474,7 +431,7 @@ export default function AdminDashboard() {
                 <input type="file" accept="image/*" onChange={handleNewPhotoSelect} />
                 <div className="flex gap-2">
                   <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300" type="button" onClick={() => setNewPhoto(null)}>Remover</button>
-                  <button className="brand-btn" type="button" onClick={saveSitePhoto} disabled={savingPhoto}>{savingPhoto ? 'Salvando…' : 'Salvar foto'}</button>
+                  <button className="brand-btn" type="button" onClick={saveSitePhoto} disabled={savingPhoto || !newPhoto}>{savingPhoto ? 'Salvando…' : 'Salvar foto'}</button>
                 </div>
               </div>
             </div>
