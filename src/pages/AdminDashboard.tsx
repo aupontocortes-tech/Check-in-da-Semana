@@ -434,108 +434,107 @@ export default function AdminDashboard() {
             </div>
             <p className="text-xs opacity-60 mt-2">Dica: também é possível abrir o site com <code>?api=URL</code> para configurar rapidamente.</p>
           </section>
-        <div className="bg-white/5 rounded p-4 h-[320px]">
-          <h3 className="font-semibold mb-2">Treinos por semana (aluna)</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={treinosPorSemana}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="semana" stroke="#fff" />
-              <YAxis stroke="#fff" />
-              <Tooltip />
-              <Bar dataKey="count" fill="#FF7A00" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white/5 rounded p-4 h-[320px]">
-          <h3 className="font-semibold mb-2">Qualidade do sono</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie data={sleepDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false}>
-                {sleepDist.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-          </section>
-
-          <section className="grid gap-6 md:grid-cols-2">
-        <div className="bg-white/5 rounded p-4 h-[320px]">
-          <h3 className="font-semibold mb-2">Energia x Motivação (semanas)</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={energyMotivation}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="idx" stroke="#fff" />
-              <YAxis stroke="#fff" />
-              <Tooltip />
-              <Line type="monotone" dataKey="energia" stroke="#FF7A00" />
-              <Line type="monotone" dataKey="motivacao" stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-white/5 rounded p-4 h-[320px]">
-          <h3 className="font-semibold mb-1">Adesão à alimentação</h3>
-          <p className="text-xs opacity-75 mb-2">Percentual por resposta da aluna selecionada</p>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={foodAdherence}
-                dataKey="qtd"
-                nameKey="categoria"
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={90}
-                label={({ pct }: any) => `${pct}%`}
-                labelLine={false}
-              >
-                {foodAdherence.map((d, i) => (
-                  <Cell key={i} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: any, _name: any, props: any) => [`${value} respostas (${props.payload.pct}%)`, props.payload.categoria]} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-          </section>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="bg-white/5 rounded p-4 h-[320px]">
+              <h3 className="font-semibold mb-2">Treinos por semana (aluna)</h3>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={treinosPorSemana}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="semana" stroke="#fff" />
+                  <YAxis stroke="#fff" />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#FF7A00" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          
+            <div className="bg-white/5 rounded p-4 h-[320px]">
+              <h3 className="font-semibold mb-2">Qualidade do sono</h3>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie data={sleepDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false}>
+                    {sleepDist.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="bg-white/5 rounded p-4 h-[320px]">
+              <h3 className="font-semibold mb-2">Energia x Motivação (semanas)</h3>
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={energyMotivation}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="idx" stroke="#fff" />
+                  <YAxis stroke="#fff" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="energia" stroke="#FF7A00" />
+                  <Line type="monotone" dataKey="motivacao" stroke="#8884d8" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-white/5 rounded p-4 h-[320px]">
+              <h3 className="font-semibold mb-1">Adesão à alimentação</h3>
+              <p className="text-xs opacity-75 mb-2">Percentual por resposta da aluna selecionada</p>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={foodAdherence}
+                    dataKey="qtd"
+                    nameKey="categoria"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    label={({ pct }: any) => `${pct}%`}
+                    labelLine={false}
+                  >
+                    {foodAdherence.map((d, i) => (
+                      <Cell key={i} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any, _name: any, props: any) => [`${value} respostas (${props.payload.pct}%)`, props.payload.categoria]} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
           <section>
-        <h3 className="font-semibold mb-2">Respostas</h3>
-        <div className="grid gap-2">
-          {items.map((it, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded p-3 cursor-pointer hover:bg-gray-100 transition-colors text-black"
-              onClick={() => setSelectedItem(it)}
-            >
-              <div className="font-semibold flex items-center gap-3">
-                <button
-                  className="underline decoration-brand text-left"
-                  onClick={(e) => { e.stopPropagation(); setSelectedNome(it.nomeCompleto); fetchData(adminKey, it.nomeCompleto); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            <h3 className="font-semibold mb-2">Respostas</h3>
+            <div className="grid gap-2">
+              {items.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded p-3 cursor-pointer hover:bg-gray-100 transition-colors text-black"
+                  onClick={() => setSelectedItem(it)}
                 >
-                  {it.nomeCompleto}
-                </button>
-                <span>— {it.semanaTexto}</span>
-                <button
-                  className="ml-auto text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
-                  onClick={(e) => { e.stopPropagation(); setSelectedItem(it) }}
-                >
-                  Detalhes
-                </button>
-              </div>
-              <div className="text-sm opacity-75">Força: {it.treinosForca} | Energia: {it.energiaGeral} | Sono: {it.sonoRecuperacao}</div>
+                  <div className="font-semibold flex items-center gap-3">
+                    <button
+                      className="underline decoration-brand text-left"
+                      onClick={(e) => { e.stopPropagation(); setSelectedNome(it.nomeCompleto); fetchData(adminKey, it.nomeCompleto); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      {it.nomeCompleto}
+                    </button>
+                    <span>— {it.semanaTexto}</span>
+                    <button
+                      className="ml-auto text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                      onClick={(e) => { e.stopPropagation(); setSelectedItem(it) }}
+                    >
+                      Detalhes
+                    </button>
+                  </div>
+                  <div className="text-sm opacity-75">Força: {it.treinosForca} | Energia: {it.energiaGeral} | Sono: {it.sonoRecuperacao}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
           </section>
         </div>
       </div>
 
-      {/* Lista de nomes para mobile (abre pelo ícone 👥) */}
       {showNamesList && (
         <section className="md:hidden bg-white rounded p-4 text-black">
           <div className="flex items-center justify-between mb-2">
@@ -557,33 +556,33 @@ export default function AdminDashboard() {
         </section>
       )}
 
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 max-w-2xl w-full mx-4 text-black">
+      {selectedItem ? (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+           <div className="bg-white border border-gray-200 rounded-lg p-4 max-w-2xl w-full mx-4 text-black">
             <div className="flex justify-between items-center mb-3">
-              <h4 className="text-lg font-semibold">{selectedItem.nomeCompleto} — {selectedItem.semanaTexto || (selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleDateString('pt-BR') : '')}</h4>
+              <h4 className="text-lg font-semibold">{selectedItem?.nomeCompleto ?? '—'} — {selectedItem?.semanaTexto || (selectedItem?.createdAt ? new Date(selectedItem?.createdAt as any).toLocaleDateString('pt-BR') : '')}</h4>
               <button className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setSelectedItem(null)}>Fechar</button>
             </div>
             <div className="grid gap-2 md:grid-cols-2">
-              <div className="text-sm opacity-80">Criado em: {selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleString('pt-BR') : '—'}</div>
-              <div className="text-sm opacity-80">Treinos de força: {selectedItem.treinosForca}</div>
-              <div className="text-sm opacity-80">Evolução: {selectedItem.evolucaoDesempenho}</div>
-              <div className="text-sm opacity-80">Energia geral: {selectedItem.energiaGeral}</div>
-              <div className="text-sm opacity-80">Sono/recuperação: {selectedItem.sonoRecuperacao}</div>
-              <div className="text-sm opacity-80">Alimentação no plano: {selectedItem.alimentacaoPlano}</div>
-              <div className="text-sm opacity-80">Motivação/humor: {selectedItem.motivacaoHumor}</div>
-              <div className="text-sm opacity-80">Cardio sessões: {selectedItem.cardioSessoes}</div>
-              <div className="text-sm opacity-80">Tipo de cardio: {selectedItem.tipoCardio}</div>
-              <div className="text-sm opacity-80">Duração cardio: {selectedItem.duracaoCardio} min</div>
-              <div className="text-sm opacity-80">Intensidade cardio: {selectedItem.intensidadeCardio}</div>
-              <div className="text-sm opacity-80">Dias marcados: {selectedItem.diasMarcados?.length || 0}</div>
+              <div className="text-sm opacity-80">Criado em: {selectedItem?.createdAt ? new Date(selectedItem?.createdAt as any).toLocaleString('pt-BR') : '—'}</div>
+              <div className="text-sm opacity-80">Treinos de força: {selectedItem?.treinosForca ?? '—'}</div>
+              <div className="text-sm opacity-80">Evolução: {selectedItem?.evolucaoDesempenho ?? '—'}</div>
+              <div className="text-sm opacity-80">Energia geral: {selectedItem?.energiaGeral ?? '—'}</div>
+              <div className="text-sm opacity-80">Sono/recuperação: {selectedItem?.sonoRecuperacao ?? '—'}</div>
+              <div className="text-sm opacity-80">Alimentação no plano: {selectedItem?.alimentacaoPlano ?? '—'}</div>
+              <div className="text-sm opacity-80">Motivação/humor: {selectedItem?.motivacaoHumor ?? '—'}</div>
+              <div className="text-sm opacity-80">Cardio sessões: {selectedItem?.cardioSessoes ?? '—'}</div>
+              <div className="text-sm opacity-80">Tipo de cardio: {selectedItem?.tipoCardio ?? '—'}</div>
+              <div className="text-sm opacity-80">Duração cardio: {selectedItem?.duracaoCardio ?? 0} min</div>
+              <div className="text-sm opacity-80">Intensidade cardio: {selectedItem?.intensidadeCardio ?? '—'}</div>
+              <div className="text-sm opacity-80">Dias marcados: {selectedItem?.diasMarcados?.length || 0}</div>
             </div>
             <div className="mt-3 text-sm">
-              {selectedItem.diasMarcados?.length ? (
+              {selectedItem?.diasMarcados?.length ? (
                 <div>
                   <div className="opacity-80 mb-1">Lista de dias selecionados:</div>
                   <div className="flex flex-wrap gap-2">
-                    {selectedItem.diasMarcados.map((d, i) => (
+                    {selectedItem?.diasMarcados?.map((d, i) => (
                       <span key={i} className="px-2 py-1 rounded bg-gray-200">{d}</span>
                     ))}
                   </div>
@@ -591,17 +590,17 @@ export default function AdminDashboard() {
               ) : null}
             </div>
             <div className="mt-3 grid gap-2">
-              <div className="text-sm opacity-80">Treino não completado: {selectedItem.treinoNaoCompletado || '—'}</div>
-              <div className="text-sm opacity-80">Dor/fadiga: {selectedItem.dorOuFadiga || '—'}</div>
-              <div className="text-sm opacity-80">Ajuste próxima semana: {selectedItem.ajusteProximaSemana || '—'}</div>
-              <div className="text-sm opacity-80">Comentários adicionais: {selectedItem.comentariosAdicionais || '—'}</div>
-              {selectedItem.whatsapp ? (
+              <div className="text-sm opacity-80">Treino não completado: {selectedItem?.treinoNaoCompletado || '—'}</div>
+              <div className="text-sm opacity-80">Dor/fadiga: {selectedItem?.dorOuFadiga || '—'}</div>
+              <div className="text-sm opacity-80">Ajuste próxima semana: {selectedItem?.ajusteProximaSemana || '—'}</div>
+              <div className="text-sm opacity-80">Comentários adicionais: {selectedItem?.comentariosAdicionais || '—'}</div>
+              {selectedItem?.whatsapp ? (
                 <div className="text-sm opacity-80">WhatsApp informado: {selectedItem.whatsapp}</div>
               ) : null}
             </div>
           </div>
-        </div>
-      )}
+         </div>
+       ) : null}
       {/* Modal de confirmação/exclusão */}
       {showClearModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
