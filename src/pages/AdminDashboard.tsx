@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile } from '../api'
+import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile, getActiveApiBase, setRuntimeApiBase, pingHealth } from '../api'
 import type { CheckinFormData, SleepOption, EnergyOption, MotivationOption } from '../types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, Legend, CartesianGrid, ResponsiveContainer } from 'recharts'
 
@@ -28,8 +28,9 @@ export default function AdminDashboard() {
   const [newPhoto, setNewPhoto] = useState<string | null>(null)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [updateNotice, setUpdateNotice] = useState('')
+  const [apiBase, setApiBase] = useState('')
+  const [savingApi, setSavingApi] = useState(false)
   
-
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
     localStorage.removeItem('ADMIN_KEY')
@@ -47,7 +48,7 @@ export default function AdminDashboard() {
         setAdminWhatsapp('')
       }
     })()
-    
+    try { setApiBase(getActiveApiBase() || '') } catch {}
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {
@@ -259,6 +260,31 @@ export default function AdminDashboard() {
     setShowSendModal(true)
   }
 
+  const handleSaveApiBase = async () => {
+    const v = (apiBase || '').trim()
+    if (!v) return alert('Informe a URL do backend (ex: https://seu-backend.com)')
+    setSavingApi(true)
+    try {
+      setRuntimeApiBase(v)
+      const ok = await pingHealth(v)
+      setUpdateNotice(ok ? 'API configurada e online.' : 'API configurada, mas saúde não respondeu.')
+      setTimeout(() => setUpdateNotice(''), 5000)
+    } catch {
+      alert('Falha ao configurar/testar a API.')
+    } finally {
+      setSavingApi(false)
+    }
+  }
+
+  const handleTestApi = async () => {
+    try {
+      const ok = await pingHealth((apiBase || undefined))
+      alert(ok ? 'API OK (health retornou ok).' : 'Falha ao alcançar /health na API informada.')
+    } catch {
+      alert('Erro ao testar a API.')
+    }
+  }
+
   const confirmSend = async () => {
     if (!items.length) return alert('Sem dados')
     const latest = items[0]
@@ -396,49 +422,18 @@ export default function AdminDashboard() {
                 <input className="px-3 py-2 rounded bg-white/5 border border-white/10" placeholder="ex: 5599999999999" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
               </label>
             </div>
-            <div className="mt-3">
-              <button
-                className="brand-btn"
-                onClick={async () => {
-                  try {
-                    const resp = await updateProfile({ email: adminEmail, whatsapp: adminWhatsapp })
-                    if (!resp.ok) throw new Error('invalid')
-                    setUpdateNotice('Configurações salvas. Todos os links foram atualizados.')
-                    setTimeout(() => setUpdateNotice(''), 5000)
-                  } catch {
-                    alert('Erro ao salvar contato')
-                  }
-                }}
-              >
-                Salvar
-              </button>
-            </div>
-            
           </section>
 
-          {/* Foto fixa do site */}
-          <section className="bg-white rounded p-4 text-black grid gap-3">
-            <h3 className="font-semibold">Foto de perfil do site</h3>
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                {newPhoto || sitePhoto ? (
-                  <img src={newPhoto || sitePhoto || ''} alt="Foto do site" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xs opacity-70">Sem foto</span>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <input type="file" accept="image/*" onChange={handleNewPhotoSelect} />
-                <div className="flex gap-2">
-                  <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300" type="button" onClick={() => setNewPhoto(null)}>Remover</button>
-                  <button className="brand-btn" type="button" onClick={saveSitePhoto} disabled={savingPhoto || !newPhoto}>{savingPhoto ? 'Salvando…' : 'Salvar foto'}</button>
-                </div>
-              </div>
+          <section className="bg-white/5 rounded p-4">
+            <h3 className="font-semibold mb-3">Configuração do backend (API)</h3>
+            <p className="text-sm opacity-75 mb-3">Defina a URL da API usada pelo site para salvar dados e a foto. Em produção, informe o backend correto (ex.: Render/Railway). Em localhost, não é necessário.</p>
+            <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
+              <input className="px-3 py-2 rounded bg-white/5 border border-white/10" placeholder="ex: https://seu-backend.onrender.com" value={apiBase} onChange={(e) => setApiBase(e.target.value)} />
+              <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300" type="button" onClick={handleTestApi}>Testar</button>
+              <button className="brand-btn" type="button" onClick={handleSaveApiBase} disabled={savingApi}>{savingApi ? 'Salvando…' : 'Salvar'}</button>
             </div>
-            <p className="text-sm opacity-70">A foto é fixa no site e pode ser alterada diretamente por quem tiver acesso a este painel.</p>
+            <p className="text-xs opacity-60 mt-2">Dica: também é possível abrir o site com <code>?api=URL</code> para configurar rapidamente.</p>
           </section>
-
-          <section className="grid gap-6 md:grid-cols-2">
         <div className="bg-white/5 rounded p-4 h-[320px]">
           <h3 className="font-semibold mb-2">Treinos por semana (aluna)</h3>
           <ResponsiveContainer width="100%" height={240}>

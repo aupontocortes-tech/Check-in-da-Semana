@@ -37,17 +37,44 @@ const CANDIDATE_BASES: string[] = (() => {
   return Array.from(new Set(bases.filter(Boolean)))
 })()
 
+// Bases em runtime (recheca localStorage sempre que chamada)
+function runtimeBases(): string[] {
+  const bases = CANDIDATE_BASES.slice()
+  try {
+    if (typeof window !== 'undefined') {
+      const rt = (window.localStorage.getItem('API_BASE') || '').trim()
+      if (rt) bases.unshift(rt)
+    }
+  } catch {}
+  return Array.from(new Set(bases.filter(Boolean)))
+}
+
 // Utils para inspeção/diagóstico da API em tempo de execução
 export function getApiBases(): string[] {
-  return CANDIDATE_BASES.slice()
+  return runtimeBases()
 }
 
 export function getActiveApiBase(): string | undefined {
-  return CANDIDATE_BASES[0]
+  return runtimeBases()[0]
+}
+
+// Permite configurar a base da API em tempo de execução (localStorage)
+export function setRuntimeApiBase(url?: string): string | undefined {
+  try {
+    if (typeof window !== 'undefined') {
+      const v = (url || '').trim()
+      if (v) {
+        window.localStorage.setItem('API_BASE', v)
+      } else {
+        window.localStorage.removeItem('API_BASE')
+      }
+    }
+  } catch {}
+  return getActiveApiBase()
 }
 
 export async function pingHealth(base?: string): Promise<boolean> {
-  const b = base || CANDIDATE_BASES[0]
+  const b = base || getActiveApiBase()
   if (!b) return false
   try {
     const res = await axios.get(`${b}/health`, { timeout: 4000 })
@@ -59,7 +86,7 @@ export async function pingHealth(base?: string): Promise<boolean> {
 
 async function getWithFallback<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
   let lastErr: any = null
-  for (const base of CANDIDATE_BASES) {
+  for (const base of runtimeBases()) {
     try {
       const res = await axios.get(`${base}${path}`, { timeout: 5000, ...(config || {}) })
       return res.data as T
@@ -73,7 +100,7 @@ async function getWithFallback<T>(path: string, config?: AxiosRequestConfig): Pr
 
 async function postWithFallback<T>(path: string, payload: any): Promise<T> {
   let lastErr: any = null
-  for (const base of CANDIDATE_BASES) {
+  for (const base of runtimeBases()) {
     try {
       const res = await axios.post(`${base}${path}`, payload, { timeout: 5000 })
       return res.data as T
