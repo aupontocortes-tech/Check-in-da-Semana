@@ -5,7 +5,7 @@ import fs from 'fs'
 import PDFDocument from 'pdfkit'
 import dotenv from 'dotenv'
 import nodemailer from 'nodemailer'
-import { pool, initSchema, getAllCheckins as dbGetAllCheckins, insertCheckin as dbInsertCheckin, clearCheckins as dbClearCheckins, getProfileDb as dbGetProfile, writeProfileDb as dbWriteProfile } from './db.js'
+import { hasDb, initSchema, getAllCheckins as dbGetAllCheckins, insertCheckin as dbInsertCheckin, clearCheckins as dbClearCheckins, getProfileDb as dbGetProfile, writeProfileDb as dbWriteProfile, getHealthCounts } from './db.js'
 
 dotenv.config()
 
@@ -50,12 +50,12 @@ function appendOne(obj) {
 }
 
 async function readAllUnified() {
-  if (pool) return await dbGetAllCheckins()
+  if (hasDb()) return await dbGetAllCheckins()
   return readAll()
 }
 
 async function appendOneUnified(obj) {
-  if (pool) return await dbInsertCheckin(obj)
+  if (hasDb()) return await dbInsertCheckin(obj)
   return appendOne(obj)
 }
 
@@ -93,16 +93,16 @@ function writeProfile(patch) {
 }
 
 async function readProfileUnified() {
-  // Usa Postgres se configurado, com fallback para filesystem
-  if (pool) {
+  // Usa DB (SQLite/Postgres) se configurado, com fallback para filesystem
+  if (hasDb()) {
     try { return await dbGetProfile() } catch (e) { console.warn('Perfil DB indisponível, fallback FS', e) }
   }
   return readProfile()
 }
 
 async function writeProfileUnified(patch) {
-  // Usa Postgres se configurado, com fallback para filesystem
-  if (pool) {
+  // Usa DB (SQLite/Postgres) se configurado, com fallback para filesystem
+  if (hasDb()) {
     try { return await dbWriteProfile(patch) } catch (e) { console.warn('Gravação perfil DB falhou, fallback FS', e) }
   }
   return writeProfile(patch)
@@ -195,7 +195,7 @@ app.post('/api/admin/clear', async (req, res) => {
   }
   try {
     let previous = await readAllUnified()
-    if (pool) {
+    if (hasDb()) {
       await dbClearCheckins()
     } else {
       fs.writeFileSync(storePath, '[]', 'utf-8')
@@ -327,33 +327,20 @@ app.post('/api/report/send', async (req, res) => {
 const port = process.env.PORT || 5175
 app.listen(port, () => {
   console.log(`API server running at http://localhost:${port}`)
-  if (pool) {
+  if (hasDb()) {
     initSchema().then(() => {
-      console.log('Postgres habilitado e pronto')
+      console.log('Banco habilitado e pronto (SQLite/Postgres)')
     }).catch((err) => {
       console.error('Falha ao inicializar schema', err)
     })
   } else {
-    console.warn('Postgres não configurado: usando filesystem')
+    console.warn('Banco não configurado: usando filesystem')
   }
 })
 // Healthcheck para deploys
 app.get('/health', async (_req, res) => {
   const base = { ok: true, ts: new Date().toISOString() }
-  if (!pool) return res.json({ ...base, db: { enabled: false } })
-  try {
-    const { rows: r1 } = await pool.query('SELECT COUNT(*)::int AS c FROM checkins_app')
-    const { rows: r2 } = await pool.query('SELECT COUNT(*)::int AS c FROM profile_app')
-    return res.json({
-      ...base,
-      db: {
-        enabled: true,
-        checkins_count: r1?.[0]?.c ?? 0,
-        profile_rows: r2?.[0]?.c ?? 0,
-      },
-    })
-  } catch (e) {
-    console.warn('Health DB erro', e)
-    return res.json({ ...base, db: { enabled: true, error: 'query_failed' } })
-  }
+  if (!hasDb()) return res.json({ ...base, db: { enabled: false } })
+  const db = await getHealthCounts()
+  return res.json({ ...base, db })
 })
