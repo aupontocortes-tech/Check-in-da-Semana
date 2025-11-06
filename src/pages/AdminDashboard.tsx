@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   const [updateNotice, setUpdateNotice] = useState('')
   const [apiBase, setApiBase] = useState('')
   const [savingApi, setSavingApi] = useState(false)
+  const [savingContacts, setSavingContacts] = useState(false)
   
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -178,6 +179,22 @@ export default function AdminDashboard() {
       alert('Erro ao remover a foto.')
     } finally {
       setSavingPhoto(false)
+    }
+  }
+
+  const saveContacts = async () => {
+    const email = (adminEmail || '').trim()
+    const whatsapp = (adminWhatsapp || '').replace(/\D/g, '')
+    setSavingContacts(true)
+    try {
+      const resp = await updateProfile({ email, whatsapp })
+      if (!resp.ok) throw new Error('invalid')
+      setUpdateNotice('Contatos atualizados (e-mail e WhatsApp).')
+      setTimeout(() => setUpdateNotice(''), 5000)
+    } catch (e) {
+      alert('Erro ao salvar contatos.')
+    } finally {
+      setSavingContacts(false)
     }
   }
 
@@ -435,6 +452,12 @@ export default function AdminDashboard() {
                 <span className="text-sm opacity-80">WhatsApp do treinador (com DDD)</span>
                 <input className="px-3 py-2 rounded bg-white/5 border border-white/10" placeholder="ex: 5599999999999" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
               </label>
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <button className="brand-btn" type="button" onClick={saveContacts} disabled={savingContacts}>
+                {savingContacts ? 'Salvando…' : 'Salvar contatos'}
+              </button>
+              <span className="text-xs opacity-60">Usado no envio por e-mail/WhatsApp.</span>
             </div>
           </section>
 
