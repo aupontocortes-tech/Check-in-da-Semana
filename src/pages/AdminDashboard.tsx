@@ -36,9 +36,11 @@ export default function AdminDashboard() {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
     localStorage.removeItem('ADMIN_KEY')
     localStorage.removeItem('ADMIN_USER')
+    const controller = new AbortController()
+    const { signal } = controller
     ;(async () => {
       try {
-        const p = await getProfile()
+        const p = await getProfile({ signal })
         setSitePhoto(p.photo || null)
         // Usa exclusivamente os valores do servidor
         setAdminEmail((p.email || '').trim())
@@ -50,6 +52,7 @@ export default function AdminDashboard() {
       }
     })()
     try { setApiBase(getActiveApiBase() || '') } catch {}
+    return () => { controller.abort() }
   }, [])
 
   const fetchData = async (key: string, nome?: string) => {

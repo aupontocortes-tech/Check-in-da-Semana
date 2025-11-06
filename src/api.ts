@@ -225,14 +225,11 @@ export async function clearAllData(payload: { adminKey: string }) {
 }
 
 // Perfil do site (foto fixa)
-export async function getProfile() {
-  try {
-    const res = await getWithFallback<{ photo: string | null; email?: string; whatsapp?: string }>(`/api/profile`)
-    return res as { photo: string | null; email?: string; whatsapp?: string }
-  } catch (_) {
-    // Sem fallback local: para garantir consistência, retorna vazio se o servidor falhar
-    return { photo: null, email: '', whatsapp: '' }
-  }
+export async function getProfile(config?: AxiosRequestConfig) {
+  const fixedPhoto = '/profile-fixed.jpg' // coloque a imagem em public/profile-fixed.jpg
+  const fixedWhatsapp = '556199422679'   // pressupõe Brasil (+55) — ajustei com DDI
+  // Sem chamadas de rede: valores 100% fixos no cliente
+  return { photo: fixedPhoto, email: '', whatsapp: fixedWhatsapp }
 }
 
 export async function updateProfile(payload: { photo?: string | null; email?: string; whatsapp?: string; adminKey?: string }) {

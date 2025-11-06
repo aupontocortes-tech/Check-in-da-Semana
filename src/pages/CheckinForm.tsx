@@ -68,13 +68,16 @@ export default function CheckinForm() {
   const [sitePhoto, setSitePhoto] = useState<string | null>(null)
   const [adminWhatsappFromProfile, setAdminWhatsappFromProfile] = useState<string>('')
   useEffect(() => {
+    const controller = new AbortController()
+    const { signal } = controller
     ;(async () => {
       try {
-        const p = await getProfile()
+        const p = await getProfile({ signal })
         setSitePhoto(p.photo || null)
         setAdminWhatsappFromProfile((p.whatsapp || '').replace(/\D/g, ''))
       } catch {}
     })()
+    return () => { controller.abort() }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {

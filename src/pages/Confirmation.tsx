@@ -5,12 +5,15 @@ export default function Confirmation() {
   const [photo, setPhoto] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
+    const { signal } = controller
     ;(async () => {
       try {
-        const p = await getProfile()
+        const p = await getProfile({ signal })
         setPhoto(p.photo || null)
       } catch {}
     })()
+    return () => { controller.abort() }
   }, [])
 
   return (
