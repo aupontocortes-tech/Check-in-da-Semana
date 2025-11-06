@@ -19,12 +19,8 @@ export default function Confirmation() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
-          {photo ? (
-            <img src={photo} alt="Foto da Prof. Naty" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-xs opacity-70">Prof. Naty</span>
-          )}
+        <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+          <img src="/profile-fixed.jpg" alt="Foto fixa" className="w-full h-full object-cover" />
         </div>
         <h2 className="script-title text-3xl md:text-4xl">personal Nat.</h2>
       </div>

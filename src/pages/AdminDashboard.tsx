@@ -465,25 +465,10 @@ export default function AdminDashboard() {
             <h3 className="font-semibold mb-3">Foto do site</h3>
             <div className="grid gap-3 md:grid-cols-[auto_1fr] items-center">
               <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
-                {newPhoto ? (
-                  <img src={newPhoto} alt="Prévia da foto" className="w-full h-full object-cover" />
-                ) : sitePhoto ? (
-                  <img src={sitePhoto} alt="Foto atual do site" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xs opacity-70">Sem foto</span>
-                )}
+                <img src="/profile-fixed.jpg" alt="Foto fixa do site" className="w-full h-full object-cover" />
               </div>
               <div className="grid gap-2">
-                <input type="file" accept="image/*" onChange={handleNewPhotoSelect} className="px-3 py-2 rounded bg-white/5 border border-white/10" />
-                <div className="flex gap-2">
-                  <button className="brand-btn" type="button" onClick={saveSitePhoto} disabled={!newPhoto || savingPhoto}>
-                    {savingPhoto ? 'Salvando…' : 'Salvar foto'}
-                  </button>
-                  <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black" type="button" onClick={deleteSitePhoto} disabled={savingPhoto || (!sitePhoto && !newPhoto)}>
-                    Excluir foto
-                  </button>
-                </div>
-                <p className="text-xs opacity-60">Dica: a imagem será reduzida para otimizar o site.</p>
+                <span className="text-sm opacity-70">Foto fixa no perfil (somente leitura). Edição desativada.</span>
               </div>
             </div>
           </section>
