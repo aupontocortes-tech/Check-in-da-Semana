@@ -350,11 +350,8 @@ export default function AdminDashboard() {
           `Alimentação: ${latest.alimentacaoPlano}`,
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-        const appUrl = `whatsapp://send?phone=${phone}&text=${text}`
-        const webUrl = `https://wa.me/${phone}?text=${text}`
-        try { if (isMobile) window.location.href = appUrl } catch {}
-        setTimeout(() => { try { window.location.href = webUrl } catch {} }, 200)
+        const apiUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${text}`
+        try { window.open(apiUrl, '_blank') } catch {}
       }
     }
     alert(`Relatório enviado${useEmail ? ' por e-mail' : ''}${useWhats ? (useEmail ? ' e WhatsApp' : ' por WhatsApp') : ''}!`)

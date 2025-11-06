@@ -118,12 +118,8 @@ export default function CheckinForm() {
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
         const phone = adminWhatsapp
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-        const appUrl = `whatsapp://send?phone=${phone}&text=${text}`
-        const webUrl = `https://wa.me/${phone}?text=${text}`
-        try { if (isMobile) window.location.href = appUrl } catch {}
-        // Fallback web após pequeno delay
-        setTimeout(() => { try { window.location.href = webUrl } catch {} }, 200)
+        const apiUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${text}`
+        try { window.open(apiUrl, '_blank') } catch {}
       }
       navigate('/confirmation')
     } catch (err) {
