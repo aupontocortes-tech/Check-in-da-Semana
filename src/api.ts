@@ -24,7 +24,12 @@ const CANDIDATE_BASES: string[] = (() => {
     const host = window.location.host || ''
     const isLocal = /localhost|127\.0\.0\.1/.test(host)
     // Prioriza localhost em desenvolvimento para evitar tentativas na nuvem
-    if (isLocal) bases.push('http://localhost:5175')
+    if (isLocal) {
+      bases.push('http://localhost:5175')
+    } else {
+      // Em produção (ex.: Vercel), usa mesma origem para aproveitar rewrites (/api -> backend)
+      bases.push(window.location.origin)
+    }
   } else {
     bases.push('http://localhost:5175')
   }
