@@ -153,7 +153,7 @@ export default function AdminDashboard() {
     }
     setSavingPhoto(true)
     try {
-      const resp = await updateProfile({ photo: newPhoto })
+      const resp = await updateProfile({ photo: newPhoto, adminKey: adminKey.trim() })
       if (!resp.ok) throw new Error('invalid')
       setSitePhoto(newPhoto || null)
       setNewPhoto(null)
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
   const deleteSitePhoto = async () => {
     setSavingPhoto(true)
     try {
-      const resp = await updateProfile({ photo: null })
+      const resp = await updateProfile({ photo: null, adminKey: adminKey.trim() })
       if (!resp.ok) throw new Error('invalid')
       setSitePhoto(null)
       setNewPhoto(null)
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
     const whatsapp = (adminWhatsapp || '').replace(/\D/g, '')
     setSavingContacts(true)
     try {
-      const resp = await updateProfile({ email, whatsapp })
+      const resp = await updateProfile({ email, whatsapp, adminKey: (adminKey || '').trim() || undefined })
       if (!resp.ok) throw new Error('invalid')
       setUpdateNotice('Contatos atualizados (e-mail e WhatsApp).')
       setTimeout(() => setUpdateNotice(''), 5000)

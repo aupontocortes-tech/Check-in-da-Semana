@@ -107,7 +107,7 @@ async function postWithFallback<T>(path: string, payload: any): Promise<T> {
   let lastErr: any = null
   for (const base of runtimeBases()) {
     try {
-      const res = await axios.post(`${base}${path}`, payload, { timeout: 5000 })
+      const res = await axios.post(`${base}${path}`, payload, { timeout: 12000 })
       return res.data as T
     } catch (e) {
       lastErr = e
@@ -235,10 +235,21 @@ export async function getProfile() {
   }
 }
 
-export async function updateProfile(payload: { photo?: string | null; email?: string; whatsapp?: string }) {
+export async function updateProfile(payload: { photo?: string | null; email?: string; whatsapp?: string; adminKey?: string }) {
   try {
-    const res = await postWithFallback<{ ok: boolean }>(`/api/profile`, payload)
-    return res as { ok: boolean }
+    if (payload?.adminKey) {
+      try {
+        const res = await postWithFallback<{ ok: boolean }>(`/api/admin/profile`, payload)
+        return res as { ok: boolean }
+      } catch (_) {
+        const { adminKey, ...publicPayload } = payload
+        const res = await postWithFallback<{ ok: boolean }>(`/api/profile`, publicPayload)
+        return res as { ok: boolean }
+      }
+    } else {
+      const res = await postWithFallback<{ ok: boolean }>(`/api/profile`, payload)
+      return res as { ok: boolean }
+    }
   } catch (_) {
     // Sem fallback local: falha explícita para não criar divergência entre links
     return { ok: false }
