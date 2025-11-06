@@ -165,9 +165,23 @@ export default function AdminDashboard() {
     }
   }
 
-  
+  const deleteSitePhoto = async () => {
+    setSavingPhoto(true)
+    try {
+      const resp = await updateProfile({ photo: null })
+      if (!resp.ok) throw new Error('invalid')
+      setSitePhoto(null)
+      setNewPhoto(null)
+      setUpdateNotice('Foto removida do site.')
+      setTimeout(() => setUpdateNotice(''), 5000)
+    } catch (e) {
+      alert('Erro ao remover a foto.')
+    } finally {
+      setSavingPhoto(false)
+    }
+  }
 
-  const groupedByNome = useMemo(() => {
+   const groupedByNome = useMemo(() => {
     const map: Record<string, number> = {}
     for (const it of items) {
       const k = it.nomeCompleto
@@ -425,14 +439,30 @@ export default function AdminDashboard() {
           </section>
 
           <section className="bg-white/5 rounded p-4">
-            <h3 className="font-semibold mb-3">Configuração do backend (API)</h3>
-            <p className="text-sm opacity-75 mb-3">Defina a URL da API usada pelo site para salvar dados e a foto. Em produção, informe o backend correto (ex.: Render/Railway). Em localhost, não é necessário.</p>
-            <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
-              <input className="px-3 py-2 rounded bg-white/5 border border-white/10" placeholder="ex: https://seu-backend.onrender.com" value={apiBase} onChange={(e) => setApiBase(e.target.value)} />
-              <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300" type="button" onClick={handleTestApi}>Testar</button>
-              <button className="brand-btn" type="button" onClick={handleSaveApiBase} disabled={savingApi}>{savingApi ? 'Salvando…' : 'Salvar'}</button>
+            <h3 className="font-semibold mb-3">Foto do site</h3>
+            <div className="grid gap-3 md:grid-cols-[auto_1fr] items-center">
+              <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+                {newPhoto ? (
+                  <img src={newPhoto} alt="Prévia da foto" className="w-full h-full object-cover" />
+                ) : sitePhoto ? (
+                  <img src={sitePhoto} alt="Foto atual do site" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs opacity-70">Sem foto</span>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <input type="file" accept="image/*" onChange={handleNewPhotoSelect} className="px-3 py-2 rounded bg-white/5 border border-white/10" />
+                <div className="flex gap-2">
+                  <button className="brand-btn" type="button" onClick={saveSitePhoto} disabled={!newPhoto || savingPhoto}>
+                    {savingPhoto ? 'Salvando…' : 'Salvar foto'}
+                  </button>
+                  <button className="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black" type="button" onClick={deleteSitePhoto} disabled={savingPhoto || (!sitePhoto && !newPhoto)}>
+                    Excluir foto
+                  </button>
+                </div>
+                <p className="text-xs opacity-60">Dica: a imagem será reduzida para otimizar o site.</p>
+              </div>
             </div>
-            <p className="text-xs opacity-60 mt-2">Dica: também é possível abrir o site com <code>?api=URL</code> para configurar rapidamente.</p>
           </section>
           <div className="grid gap-6 md:grid-cols-2">
             <div className="bg-white/5 rounded p-4 h-[320px]">
