@@ -178,7 +178,7 @@ export default function CheckinForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center gap-4">
         <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
-          <img src="/profile-fixed.jpg" alt="Foto fixa de perfil" className="w-full h-full object-cover object-top" />
+          <img src="/profile-fixed.jpg?v=20251108-1" alt="Foto fixa de perfil" className="w-full h-full object-cover object-top" />
         </div>
         <h1 className="script-title text-3xl md:text-4xl">personal Nat.</h1>
       </div>
