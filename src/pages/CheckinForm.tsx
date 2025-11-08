@@ -121,7 +121,7 @@ export default function CheckinForm() {
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
         const phone = adminWhatsapp
-        const apiUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${text}`
+        const apiUrl = `https://wa.me/${phone}?text=${text}`
         try { window.open(apiUrl, '_blank') } catch {}
       }
       navigate('/confirmation')

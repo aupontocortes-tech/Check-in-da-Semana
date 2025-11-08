@@ -187,7 +187,13 @@ export default function AdminDashboard() {
 
   const saveContacts = async () => {
     const email = (adminEmail || '').trim()
-    const whatsapp = (adminWhatsapp || '').replace(/\D/g, '')
+    const digits = (adminWhatsapp || '').replace(/\D/g, '')
+    // Validação específica: DDI 55 + DDD 61 + 9 dígitos
+    if (digits && !/^5561\d{9}$/.test(digits)) {
+      alert('Informe o WhatsApp no formato 5561994422679 (DDI 55 + DDD 61 + número).')
+      return
+    }
+    const whatsapp = digits
     setSavingContacts(true)
     try {
       const resp = await updateProfile({ email, whatsapp, adminKey: (adminKey || '').trim() || undefined })
@@ -450,7 +456,8 @@ export default function AdminDashboard() {
               </label>
               <label className="grid gap-1">
                 <span className="text-sm opacity-80">WhatsApp do treinador (com DDD)</span>
-                <input className="px-3 py-2 rounded bg-white/5 border border-white/10" placeholder="ex: 5599999999999" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
+                <input className="px-3 py-2 rounded bg_WHITE/5 border border_WHITE/10" placeholder="ex: 5561994422679" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
+                <span className="text-xs opacity-60">Formato esperado: 5561994422679 (+55 DDI, 61 DDD)</span>
               </label>
             </div>
             <div className="flex items-center gap-2 mt-3">
