@@ -28,16 +28,43 @@ body {
   @apply text-white font-inter;
 }
 
-/* Tema festivo: fundo quente com brilho e efeito vidro nos painéis */
+/* Tema festivo com enfeites: fundo com cookies, galhos e ornamentos */
 body.theme-festive {
-  /* Camadas de fundo: gradiente quente + grão sutil + brilho superior */
+  /* Camada base: foto natalina (Unsplash) + gradiente de profundidade */
   background-image:
-    radial-gradient(1200px 300px at 50% -100px, rgba(255,120,0,0.35), transparent 60%),
-    radial-gradient(600px 300px at 10% 0%, rgba(255,180,0,0.25), transparent 60%),
-    radial-gradient(600px 300px at 90% 0%, rgba(255,80,80,0.2), transparent 60%),
+    url('https://images.unsplash.com/photo-1607083208244-2110e3d5223f?auto=format&fit=crop&w=2400&q=80'),
     linear-gradient(180deg, #23160f 0%, #1a120d 100%);
-  background-color: #1a120d;
+  background-size: cover, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
   background-attachment: fixed;
+  background-color: #1a120d;
+}
+
+/* Glow quente no topo e partículas suaves para dar clima */
+body.theme-festive::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 300px at 50% -150px, rgba(255,140,0,0.35), transparent 60%),
+    radial-gradient(500px 200px at 15% 0%, rgba(255,80,80,0.25), transparent 60%),
+    radial-gradient(500px 200px at 85% 0%, rgba(255,180,0,0.25), transparent 60%),
+    radial-gradient(2px 2px at 20% 15%, rgba(255,255,255,0.12), transparent 60%),
+    radial-gradient(2px 2px at 30% 12%, rgba(255,255,255,0.10), transparent 60%),
+    radial-gradient(2px 2px at 65% 10%, rgba(255,255,255,0.10), transparent 60%),
+    radial-gradient(2px 2px at 80% 14%, rgba(255,255,255,0.12), transparent 60%);
+  mix-blend-mode: screen;
+}
+
+/* Vinheta leve nas bordas para destacar conteúdo */
+body.theme-festive::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(60% 60% at 50% 50%, transparent 60%, rgba(0,0,0,0.35) 100%);
 }
 
 /* Cabeçalho translúcido para combinar com o tema */
@@ -52,6 +79,7 @@ body.theme-festive {
 .theme-festive .brand-btn,
 .theme-festive input,
 .theme-festive textarea,
+.theme-festive select,
 .theme-festive .calendar-panel,
 .theme-festive .panel {
   background-color: rgba(20, 20, 20, 0.55);
