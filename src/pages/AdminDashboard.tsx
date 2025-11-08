@@ -465,7 +465,7 @@ export default function AdminDashboard() {
             <h3 className="font-semibold mb-3">Foto do site</h3>
             <div className="grid gap-3 md:grid-cols-[auto_1fr] items-center">
               <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
-                <img src="/profile-fixed.jpg?v=20251108-1" alt="Foto fixa do site" className="w-full h-full object-cover object-top" />
+                <img src="/profile-fixed.jpg?v=20251108-2" alt="Foto fixa do site" className="w-24 h-24 rounded-full object-cover object-top border border-white/20" />
               </div>
               <div className="grid gap-2">
                 <span className="text-sm opacity-70">Foto fixa no perfil (somente leitura). Edição desativada.</span>
