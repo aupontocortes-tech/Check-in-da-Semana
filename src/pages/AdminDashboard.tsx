@@ -353,7 +353,7 @@ export default function AdminDashboard() {
           `Alimentação: ${latest.alimentacaoPlano}`,
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
-        const apiUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${text}`
+        const apiUrl = `https://wa.me/${phone}?text=${text}`
         try { window.open(apiUrl, '_blank') } catch {}
       }
     }
