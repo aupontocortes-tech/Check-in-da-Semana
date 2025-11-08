@@ -227,7 +227,7 @@ export async function clearAllData(payload: { adminKey: string }) {
 // Perfil do site (foto fixa)
 export async function getProfile(config?: AxiosRequestConfig) {
   const fixedPhoto = '/profile-fixed.jpg?v=20251108-2' // coloque a imagem em public/profile-fixed.jpg
-  const fixedWhatsapp = '6199422679'
+  const fixedWhatsapp = '5561994422679'
   // Sem chamadas de rede: valores 100% fixos no cliente
   return { photo: fixedPhoto, email: '', whatsapp: fixedWhatsapp }
 }
