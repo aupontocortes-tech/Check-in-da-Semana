@@ -84,26 +84,10 @@ export default function CheckinForm() {
     e.preventDefault()
     try {
       setLoading(true)
-      // 1) Salva o check-in
-      await submitCheckin(data)
-
-      // 2) Envia somente via WhatsApp: desativa e-mail; abre Click-to-Chat SEMPRE
-      const adminEmail = '' // WhatsApp-only: não enviar e-mail
-      // Sempre usa o perfil do servidor para garantir consistência em todos os links
+      // Coleta o número fixo do perfil e constrói a mensagem ANTES de qualquer await
       const adminWhatsappRaw = adminWhatsappFromProfile || ''
-      const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '') // sanitiza para formato esperado do wa.me
-      // Chama backend para log/webhook/Cloud API (se configurado), mas não bloqueia UX
-      try {
-        await sendReportWebhook({
-          ...data,
-          tipo: 'checkin_submitted',
-          adminEmail,
-          adminWhatsapp,
-        })
-      } catch (_) {
-        // Falha no webhook não impede abertura do WhatsApp nem confirmação
-      }
-      // Abrir WhatsApp com mensagem pré-preenchida (independente do webhook)
+      const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '')
+      let apiUrl: string | null = null
       if (adminWhatsapp) {
         const lines = [
           `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
@@ -120,10 +104,34 @@ export default function CheckinForm() {
           (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
-        const phone = adminWhatsapp
-        const apiUrl = `https://wa.me/${phone}?text=${text}`
-        try { window.open(apiUrl, '_blank') } catch {}
+        apiUrl = `https://wa.me/${adminWhatsapp}?text=${text}`
+        // Abre o WhatsApp sincronamente (dentro do gesto de clique) para evitar bloqueio de pop-up
+        try {
+          const w = window.open(apiUrl, '_blank')
+          if (!w) {
+            // Fallback: abre na mesma aba se o navegador bloquear nova aba
+            window.location.href = apiUrl
+          }
+        } catch {
+          // Último fallback
+          window.location.href = apiUrl
+        }
       }
+
+      // 1) Salva o check-in
+      await submitCheckin(data)
+
+      // 2) Dispara webhook (não bloqueia UX)
+      try {
+        await sendReportWebhook({
+          ...data,
+          tipo: 'checkin_submitted',
+          adminEmail: '',
+          adminWhatsapp,
+        })
+      } catch (_) {}
+
+      // 3) Navega para confirmação
       navigate('/confirmation')
     } catch (err) {
       alert('Erro ao enviar. Tente novamente.')
