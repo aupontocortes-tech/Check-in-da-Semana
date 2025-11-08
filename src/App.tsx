@@ -13,8 +13,8 @@ function App() {
     })()
   }, [])
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="bg-gradient-to-r from-brand to-brand-dark border-b border-gray-800 shadow-brand">
+    <div className="min-h-screen text-white">
+      <header className="border-b border-white/10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">
             Check-in da Semana 💥

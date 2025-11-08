@@ -25,7 +25,37 @@ html, body, #root {
 }
 
 body {
-  @apply bg-gray-900 text-white font-inter;
+  @apply text-white font-inter;
+}
+
+/* Tema festivo: fundo quente com brilho e efeito vidro nos painéis */
+body.theme-festive {
+  /* Camadas de fundo: gradiente quente + grão sutil + brilho superior */
+  background-image:
+    radial-gradient(1200px 300px at 50% -100px, rgba(255,120,0,0.35), transparent 60%),
+    radial-gradient(600px 300px at 10% 0%, rgba(255,180,0,0.25), transparent 60%),
+    radial-gradient(600px 300px at 90% 0%, rgba(255,80,80,0.2), transparent 60%),
+    linear-gradient(180deg, #23160f 0%, #1a120d 100%);
+  background-color: #1a120d;
+  background-attachment: fixed;
+}
+
+/* Cabeçalho translúcido para combinar com o tema */
+.theme-festive header {
+  backdrop-filter: saturate(1.1) blur(6px);
+  background: linear-gradient(90deg, rgba(255,122,0,0.25), rgba(255,80,80,0.25)) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 24px rgba(255,122,0,0.15);
+}
+
+/* Painéis e inputs com efeito vidro leve */
+.theme-festive .brand-btn,
+.theme-festive input,
+.theme-festive textarea,
+.theme-festive .calendar-panel,
+.theme-festive .panel {
+  background-color: rgba(20, 20, 20, 0.55);
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
 /* Botão de marca */
