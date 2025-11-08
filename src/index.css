@@ -30,9 +30,9 @@ body {
 
 /* Tema festivo com enfeites: fundo com cookies, galhos e ornamentos */
 body.theme-festive {
-  /* Camada base: foto natalina (Unsplash) + gradiente de profundidade */
+  /* Camada base: asset local + gradiente de profundidade */
   background-image:
-    url('https://images.unsplash.com/photo-1607083208244-2110e3d5223f?auto=format&fit=crop&w=2400&q=80'),
+    url('/christmas-bg.svg'),
     linear-gradient(180deg, #23160f 0%, #1a120d 100%);
   background-size: cover, 100% 100%;
   background-position: center, center;

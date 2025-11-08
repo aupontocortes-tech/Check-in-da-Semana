@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1600" viewBox="0 0 2400 1600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b1d14" />
+      <stop offset="100%" stop-color="#1a120d" />
+    </linearGradient>
+    <radialGradient id="topGlow" cx="0.5" cy="-0.15" r="0.7">
+      <stop offset="0%" stop-color="rgba(255,140,0,0.6)" />
+      <stop offset="60%" stop-color="rgba(255,140,0,0.0)" />
+    </radialGradient>
+    <filter id="softBlur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+    </filter>
+  </defs>
+
+  <!-- Fundo principal -->
+  <rect x="0" y="0" width="2400" height="1600" fill="url(#bgGrad)" />
+  <!-- Glow superior -->
+  <rect x="0" y="0" width="2400" height="600" fill="url(#topGlow)" />
+
+  <!-- Ornamentos vermelhos (esferas) -->
+  <g filter="url(#softBlur)">
+    <circle cx="2200" cy="200" r="60" fill="#d43" />
+    <circle cx="200" cy="260" r="50" fill="#e44" />
+    <circle cx="300" cy="180" r="30" fill="#f66" />
+    <circle cx="2100" cy="320" r="30" fill="#e44" />
+    <circle cx="230" cy="1200" r="40" fill="#e44" />
+  </g>
+
+  <!-- Galhos de pinheiro (triângulos estilizados nas bordas) -->
+  <g fill="#1f6f3b" opacity="0.85">
+    <polygon points="100,80 160,120 40,140" />
+    <polygon points="190,130 250,170 130,190" />
+    <polygon points="2200,80 2260,120 2140,140" />
+    <polygon points="2100,130 2160,170 2040,190" />
+    <polygon points="120,1450 180,1490 60,1510" />
+    <polygon points="2200,1450 2260,1490 2140,1510" />
+  </g>
+
+  <!-- Biscoito gingerbread simples (canto inferior direito) -->
+  <g transform="translate(2050,1150) scale(1.1)">
+    <path d="M100 40 a60 60 0 1 1 120 0 a60 60 0 1 1 -120 0" fill="#d69b62" />
+    <rect x="90" y="90" width="140" height="160" rx="60" fill="#d69b62" />
+    <!-- Olhos e boca -->
+    <circle cx="140" cy="120" r="6" fill="#2b1d14" />
+    <circle cx="180" cy="120" r="6" fill="#2b1d14" />
+    <path d="M135 145 Q160 160 185 145" stroke="#2b1d14" stroke-width="6" fill="none" />
+    <!-- Botões -->
+    <circle cx="160" cy="170" r="8" fill="#e44" />
+    <circle cx="160" cy="200" r="8" fill="#e44" />
+    <!-- Decoração branca -->
+    <path d="M90 210 Q120 220 150 210" stroke="#fff" stroke-width="6" fill="none" />
+    <path d="M170 210 Q200 220 230 210" stroke="#fff" stroke-width="6" fill="none" />
+  </g>
+
+  <!-- Estrelas/partículas -->
+  <g fill="rgba(255,255,255,0.15)">
+    <circle cx="400" cy="180" r="2" />
+    <circle cx="450" cy="220" r="1.5" />
+    <circle cx="600" cy="100" r="2" />
+    <circle cx="1200" cy="90" r="1.5" />
+    <circle cx="1800" cy="160" r="2" />
+    <circle cx="2200" cy="240" r="2" />
+    <circle cx="300" cy="900" r="2" />
+    <circle cx="2100" cy="980" r="1.5" />
+    <circle cx="1900" cy="1500" r="2" />
+  </g>
+
+  <!-- Vinheta leve nas bordas -->
+  <rect x="0" y="0" width="2400" height="1600" fill="black" opacity="0.25" />
+</svg>
