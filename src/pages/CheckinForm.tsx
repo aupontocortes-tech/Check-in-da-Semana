@@ -375,6 +375,9 @@ export default function CheckinForm() {
       </label>
 
       <div className="flex justify-end gap-2">
+        <button type="button" onClick={() => window.location.reload()} className="px-3 py-2 rounded bg-white/10 hover:bg-white/20">
+          Atualizar
+        </button>
         <button type="button" onClick={handleInstallClick} className="px-3 py-2 rounded bg-white/10 hover:bg-white/20">
           Instalar app
         </button>
