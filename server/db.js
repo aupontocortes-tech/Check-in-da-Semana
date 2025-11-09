@@ -8,12 +8,15 @@ import initSqlJs from 'sql.js'
 const { DATABASE_URL } = process.env
 const USE_SQLITE = !DATABASE_URL && (process.env.USE_SQLITE === '1' || process.env.USE_SQLITE === 'true' || !!process.env.SQLITE_PATH)
 const SQLITE_FILE = process.env.SQLITE_PATH || path.join(process.cwd(), 'data', 'app.sqlite')
+const PG_SSL = process.env.PG_SSL === '1' || process.env.PG_SSL === 'true'
 
 // Postgres pool (quando DATABASE_URL está definido)
 export const pool = DATABASE_URL ? new Pool({
   connectionString: DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 30000,
+  // SSL opcional: útil para Neon quando a URL não tem ?sslmode=require
+  ...(PG_SSL ? { ssl: { rejectUnauthorized: false } } : {})
 }) : null
 
 if (pool) {
