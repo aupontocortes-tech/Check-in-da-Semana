@@ -51,6 +51,9 @@ function runtimeBases(): string[] {
       if (rt) bases.unshift(rt)
     }
   } catch {}
+  // Prioriza VITE_API_BASE antes de window.origin em produção
+  const envBaseRt = (import.meta.env.VITE_API_BASE as string) || ''
+  if (envBaseRt) bases.unshift(envBaseRt)
   return Array.from(new Set(bases.filter(Boolean)))
 }
 
