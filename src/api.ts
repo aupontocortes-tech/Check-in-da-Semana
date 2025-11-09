@@ -184,17 +184,8 @@ export async function listCheckins(params?: { nome?: string; from?: string; to?:
     })
     return res as CheckinFormData[]
   } catch (_) {
-    // Fallback: sem backend, ler do localStorage
-    const key = 'CHECKINS'
-    const arrStr = localStorage.getItem(key) || '[]'
-    let arr: CheckinFormData[] = []
-    try { arr = JSON.parse(arrStr) } catch { arr = [] }
-    // Filtragem básica por nome se fornecido
-    const nome = params?.nome?.trim()
-    if (nome) {
-      arr = arr.filter((c) => (c.nomeCompleto || '').toLowerCase().includes(nome.toLowerCase()))
-    }
-    return arr
+    // Sem fallback local no Admin: retorna lista vazia para evitar divergência por dispositivo
+    return []
   }
 }
 
