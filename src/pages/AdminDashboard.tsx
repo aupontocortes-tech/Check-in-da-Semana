@@ -381,8 +381,8 @@ export default function AdminDashboard() {
       <div className="max-w-md mx-auto px-4 space-y-4">
         <h2 className="text-xl font-bold">Acesso restrito</h2>
         <p>Informe usuário e senha do professor para entrar.</p>
-        <input type="text" className="px-3 py-2 rounded bg-white border border-gray-200 w-full text-black" placeholder="Usuário (ex: professor)" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} />
-        <input type="password" className="px-3 py-2 rounded bg-white border border-gray-200 w-full text-black" placeholder="Senha" value={adminKey} onChange={(e) => setAdminKey(e.target.value)} />
+        <input type="text" className="px-3 py-2 rounded bg-white/5 border border-white/20 w-full text-white placeholder-white/70" placeholder="Usuário (ex: professor)" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} />
+        <input type="password" className="px-3 py-2 rounded bg-white/5 border border-white/20 w-full text-white placeholder-white/70" placeholder="Senha" value={adminKey} onChange={(e) => setAdminKey(e.target.value)} />
         <button className="brand-btn" onClick={handleLogin}>Entrar</button>
       </div>
     )
