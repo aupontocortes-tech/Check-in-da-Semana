@@ -98,3 +98,117 @@ body.theme-festive::after {
 .container {
   @apply max-w-5xl mx-auto;
 }
+
+/* Ornamentação específica do título “Personal” */
+.theme-festive .festive-title {
+  position: relative;
+  display: inline-block;
+}
+.theme-festive .festive-word {
+  position: relative;
+  display: inline-block;
+  padding-right: 12px; /* espaço para ornamentos à direita */
+}
+.theme-festive .festive-p {
+  position: relative;
+  display: inline-block;
+}
+.theme-festive .festive-p::before {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 45px;
+  left: -8px;
+  top: -30px;
+  background: url('/santa-hat.svg') no-repeat center / contain;
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+.theme-festive .festive-title::after {
+  content: "";
+  position: absolute;
+  width: 200px;
+  height: 90px;
+  right: -160px;
+  top: -20px;
+  background: url('/title-ornaments.svg') no-repeat center / contain;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Guirlanda ao redor da foto da personal */
+.theme-festive .festive-wreath {
+  position: relative;
+}
+.theme-festive .festive-wreath::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  background: url('/wreath.svg') no-repeat center / contain;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+}
+
+/* Festivo: ajustar guirlanda fora da foto e atrás dela */
+body.theme-festive .festive-wreath-wrap {
+  position: relative;
+  display: inline-block;
+  isolation: isolate; /* cria contexto para z-index previsível */
+}
+body.theme-festive .festive-wreath-wrap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 115px; /* maior que o círculo de 96px */
+  height: 115px;
+  transform: translate(-50%, -50%);
+  background: url('/wreath.svg') no-repeat center / contain;
+  pointer-events: none;
+  z-index: 0; /* atrás do conteúdo interno */
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+}
+/* O container interno da foto tem z-index maior via classe z-10 */
+/* Remover o antigo overlay direto na foto se existir */
+body.theme-festive .festive-wreath::before,
+body.theme-festive .festive-wreath::after {
+  content: none !important;
+}
+
+/* Ajustes finos do gorro na letra P */
+.theme-festive .festive-title .festive-word .festive-p::before {
+  width: 72px;
+  height: 52px;
+  left: -2px; /* antes: -10px */
+  top: -32px; /* antes: -34px */
+  transform: rotate(-10deg); /* antes: -14deg */
+  transform-origin: 45% 85%;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  will-change: transform;
+}
+
+/* Guirlanda mais elaborada: aumentar margem externa */
+.theme-festive .festive-wreath-wrap::before {
+  width: 124px;
+  height: 124px;
+}
+
+/* Luzinhas ao redor da guirlanda */
+.theme-festive .festive-wreath-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 124px;
+  height: 124px;
+  transform: translate(-50%, -50%);
+  background: url('/wreath-lights.svg') center/contain no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.85; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}

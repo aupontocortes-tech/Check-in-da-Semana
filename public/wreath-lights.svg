@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <!-- círculo de lâmpadas ao redor -->
+    <circle cx="80" cy="18" r="4" fill="#ffd54f"/>
+    <circle cx="108" cy="24" r="4" fill="#ff6b6b"/>
+    <circle cx="130" cy="42" r="4" fill="#69f0ae"/>
+    <circle cx="142" cy="66" r="4" fill="#ffd54f"/>
+    <circle cx="144" cy="94" r="4" fill="#ff6b6b"/>
+    <circle cx="134" cy="118" r="4" fill="#69f0ae"/>
+    <circle cx="112" cy="136" r="4" fill="#ffd54f"/>
+    <circle cx="84" cy="142" r="4" fill="#ff6b6b"/>
+    <circle cx="56" cy="136" r="4" fill="#69f0ae"/>
+    <circle cx="34" cy="118" r="4" fill="#ffd54f"/>
+    <circle cx="24" cy="94" r="4" fill="#ff6b6b"/>
+    <circle cx="26" cy="66" r="4" fill="#69f0ae"/>
+    <circle cx="38" cy="42" r="4" fill="#ffd54f"/>
+    <circle cx="60" cy="24" r="4" fill="#ff6b6b"/>
+  </g>
+</svg>

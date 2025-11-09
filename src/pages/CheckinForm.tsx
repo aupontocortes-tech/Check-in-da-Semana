@@ -185,10 +185,12 @@ export default function CheckinForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
-          <img src="/profile-fixed.jpg?v=20251108-2" alt="Foto fixa de perfil" className="w-full h-full object-cover object-top" />
+        <div className="festive-wreath-wrap">
+          <div className="relative z-10 w-24 h-24 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+            <img src="/profile-fixed.jpg?v=20251108-2" alt="Foto fixa de perfil" className="w-full h-full object-cover object-top" />
+          </div>
         </div>
-        <h1 className="script-title text-3xl md:text-4xl">Personal Nat.</h1>
+        <h1 className="script-title text-3xl md:text-4xl festive-title"><span className="festive-word"><span className="festive-p">P</span>ersonal Nat.</span></h1>
       </div>
 
       <div className="grid gap-4">
