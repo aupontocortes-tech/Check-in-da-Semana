@@ -87,7 +87,30 @@ export default function CheckinForm() {
       // Coleta o número fixo do perfil e constrói a mensagem ANTES de qualquer await
       const adminWhatsappRaw = adminWhatsappFromProfile || ''
       const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '')
-      let apiUrl: string | null = null
+
+      // Helper: URL de envio para WhatsApp compatível com iOS/Android
+      const buildWhatsUrl = (phone: string, encodedText: string) => {
+        const p = (phone || '').replace(/\D/g, '')
+        // api.whatsapp.com é mais compatível com Safari/iOS do que wa.me
+        return `https://api.whatsapp.com/send?phone=${p}&text=${encodedText}&app_absent=0`
+      }
+      // Helper: abertura segura com fallback para iOS (PWA/Safari)
+      const openWhatsApp = (url: string) => {
+        const ua = navigator.userAgent || ''
+        const isIOS = /(iPhone|iPad|iPod)/i.test(ua) || (/Macintosh/i.test(ua) && 'ontouchend' in document)
+        try {
+          if (isIOS) {
+            // iOS/Safari (incluindo PWA) tem melhor suporte via location.assign
+            window.location.assign(url)
+          } else {
+            const w = window.open(url, '_blank', 'noopener,noreferrer')
+            if (!w) window.location.assign(url)
+          }
+        } catch {
+          window.location.assign(url)
+        }
+      }
+
       if (adminWhatsapp) {
         const lines = [
           `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
@@ -104,18 +127,9 @@ export default function CheckinForm() {
           (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
-        apiUrl = `https://wa.me/${adminWhatsapp}?text=${text}`
+        const apiUrl = buildWhatsUrl(adminWhatsapp, text)
         // Abre o WhatsApp sincronamente (dentro do gesto de clique) para evitar bloqueio de pop-up
-        try {
-          const w = window.open(apiUrl, '_blank')
-          if (!w) {
-            // Fallback: abre na mesma aba se o navegador bloquear nova aba
-            window.location.href = apiUrl
-          }
-        } catch {
-          // Último fallback
-          window.location.href = apiUrl
-        }
+        openWhatsApp(apiUrl)
       }
 
       // 1) Salva o check-in

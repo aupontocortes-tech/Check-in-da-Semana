@@ -359,8 +359,18 @@ export default function AdminDashboard() {
           `Alimentação: ${latest.alimentacaoPlano}`,
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
-        const apiUrl = `https://wa.me/${phone}?text=${text}`
-        try { window.open(apiUrl, '_blank') } catch {}
+        // Usa api.whatsapp.com para compatibilidade com iOS
+        const apiUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${text}&app_absent=0`
+        try {
+          const ua = navigator.userAgent || ''
+          const isIOS = /(iPhone|iPad|iPod)/i.test(ua) || (/Macintosh/i.test(ua) && 'ontouchend' in document)
+          if (isIOS) {
+            window.location.assign(apiUrl)
+          } else {
+            const w = window.open(apiUrl, '_blank', 'noopener,noreferrer')
+            if (!w) window.location.assign(apiUrl)
+          }
+        } catch {}
       }
     }
     alert(`Relatório enviado${useEmail ? ' por e-mail' : ''}${useWhats ? (useEmail ? ' e WhatsApp' : ' por WhatsApp') : ''}!`)
