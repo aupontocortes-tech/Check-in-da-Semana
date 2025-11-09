@@ -99,18 +99,15 @@ export default function CheckinForm() {
         const ua = navigator.userAgent || ''
         const isIOS = /(iPhone|iPad|iPod)/i.test(ua) || (/Macintosh/i.test(ua) && 'ontouchend' in document)
         try {
-          if (isIOS) {
-            // iOS/Safari (incluindo PWA) tem melhor suporte via location.assign
-            window.location.assign(url)
-          } else {
-            const w = window.open(url, '_blank', 'noopener,noreferrer')
-            if (!w) window.location.assign(url)
-          }
+          // Usa location.assign para evitar bloqueio de pop-up e garantir navegação
+          window.location.assign(url)
         } catch {
           window.location.assign(url)
         }
       }
 
+      // Pré-calcula a URL do WhatsApp, mas NÃO navega ainda
+      let whatsUrl: string | null = null
       if (adminWhatsapp) {
         const lines = [
           `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
@@ -127,15 +124,18 @@ export default function CheckinForm() {
           (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
         ].filter(Boolean)
         const text = encodeURIComponent(lines.join('\n'))
-        const apiUrl = buildWhatsUrl(adminWhatsapp, text)
-        // Abre o WhatsApp sincronamente (dentro do gesto de clique) para evitar bloqueio de pop-up
-        openWhatsApp(apiUrl)
+        whatsUrl = buildWhatsUrl(adminWhatsapp, text)
       }
 
-      // 1) Salva o check-in
+      // 1) Salva o check-in (remoto com fallback local)
       await submitCheckin(data)
 
-      // 2) Dispara webhook (não bloqueia UX)
+      // 2) Abre WhatsApp APÓS salvar, para não interromper o salvamento
+      if (whatsUrl) {
+        openWhatsApp(whatsUrl)
+      }
+
+      // 3) Dispara webhook (não bloqueia UX)
       try {
         await sendReportWebhook({
           ...data,
@@ -145,7 +145,7 @@ export default function CheckinForm() {
         })
       } catch (_) {}
 
-      // 3) Navega para confirmação
+      // 4) Navega para confirmação
       navigate('/confirmation')
     } catch (err) {
       alert('Erro ao enviar. Tente novamente.')
