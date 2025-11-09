@@ -160,8 +160,8 @@ body.theme-festive .festive-wreath-wrap::before {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 115px; /* maior que o círculo de 96px */
-  height: 115px;
+  width: 150px;
+  height: 150px;
   transform: translate(-50%, -50%);
   background: url('/wreath.svg') no-repeat center / contain;
   pointer-events: none;
@@ -175,40 +175,92 @@ body.theme-festive .festive-wreath::after {
   content: none !important;
 }
 
-/* Ajustes finos do gorro na letra P */
+/* Ajustes finos do gorro: mais acima e ligeiro giro */
 .theme-festive .festive-title .festive-word .festive-p::before {
-  width: 72px;
-  height: 52px;
-  left: -2px; /* antes: -10px */
-  top: -32px; /* antes: -34px */
-  transform: rotate(-10deg); /* antes: -14deg */
+  width: 1.85em;
+  height: 1.35em;
+  left: -0.12em;
+  top: -1.05em; /* sobe para acima do topo do P */
+  transform: rotate(-20deg);
   transform-origin: 45% 85%;
+  background: url('/santa-hat.svg') no-repeat center / contain;
   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
-  will-change: transform;
+  pointer-events: none;
+  z-index: 2;
 }
 
-/* Guirlanda mais elaborada: aumentar margem externa */
-.theme-festive .festive-wreath-wrap::before {
-  width: 124px;
-  height: 124px;
-}
-
-/* Luzinhas ao redor da guirlanda */
+/* Luzes da guirlanda: tom mais quente e leve realce */
 .theme-festive .festive-wreath-wrap::after {
   content: "";
   position: absolute;
   inset: 50% auto auto 50%;
-  width: 124px;
-  height: 124px;
+  width: 150px;
+  height: 150px;
   transform: translate(-50%, -50%);
   background: url('/wreath-lights.svg') center/contain no-repeat;
   pointer-events: none;
   z-index: 0;
-  animation: twinkle 3s ease-in-out infinite alternate;
+  animation: twinkle 2.8s ease-in-out infinite alternate;
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  filter: hue-rotate(-12deg) saturate(1.3) brightness(1.1);
 }
 
 @keyframes twinkle {
   0% { opacity: 0.85; }
   50% { opacity: 1; }
   100% { opacity: 0.7; }
+}
+
+/* Guirlanda mais densa: ampliar e duplicar camadas de folhas */
+.theme-festive .festive-wreath-wrap::before {
+  width: 136px; /* mais espessa que 124px */
+  height: 136px;
+}
+
+/* Camada adicional de folhas (rotacionada) para densidade */
+.theme-festive .festive-wreath::before {
+  content: "" !important;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%) rotate(8deg);
+  background: url('/wreath.svg') no-repeat center / contain;
+  pointer-events: none;
+  z-index: 0;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+  opacity: 0.98;
+}
+
+/* Segunda camada de luzes para parecer mais pontos luminosos */
+.theme-festive .festive-wreath::after {
+  content: "" !important;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%) rotate(26deg);
+  background: url('/wreath-lights.svg') center/contain no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+  opacity: 0.95;
+  animation: twinkle 3.2s ease-in-out infinite alternate;
+}
+
+/* Gorro: posição conforme print (acima e levemente à esquerda) */
+.theme-festive .festive-title .festive-word .festive-p::before {
+  width: 2.25em;
+  height: 1.6em;
+  left: -0.10em; /* centraliza sobre o topo do P */
+  top: -1.30em; /* sobe mais para ficar acima do P, sem encostar */
+  transform: rotate(-19deg);
+  transform-origin: 40% 85%;
+  background: url('/santa-hat.svg') no-repeat center / contain;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  pointer-events: none;
+  z-index: 2;
 }

@@ -24,7 +24,7 @@ export default function Confirmation() {
             <img src="/profile-fixed.jpg?v=20251108-2" alt="Foto fixa de perfil" className="w-full h-full object-cover object-top" />
           </div>
         </div>
-        <h2 className="script-title text-2xl md:text-3xl festive-title"><span className="festive-word"><span className="festive-p">P</span>ersonal Nat.</span></h2>
+        <h2 className="script-title text-4xl md:text-5xl festive-title"><span className="festive-word"><span className="festive-p">P</span>ersonal Nat.</span></h2>
       </div>
 
       <div className="space-y-2">

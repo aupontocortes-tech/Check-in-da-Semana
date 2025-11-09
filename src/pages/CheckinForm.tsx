@@ -190,7 +190,7 @@ export default function CheckinForm() {
             <img src="/profile-fixed.jpg?v=20251108-2" alt="Foto fixa de perfil" className="w-full h-full object-cover object-top" />
           </div>
         </div>
-        <h1 className="script-title text-3xl md:text-4xl festive-title"><span className="festive-word"><span className="festive-p">P</span>ersonal Nat.</span></h1>
+        <h1 className="script-title text-5xl md:text-6xl festive-title"><span className="festive-word"><span className="festive-p">P</span>ersonal Nat.</span></h1>
       </div>
 
       <div className="grid gap-4">

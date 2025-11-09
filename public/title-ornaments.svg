@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="120" viewBox="0 0 280 120">
+  <defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="1.6"/></filter>
+  </defs>
+  <!-- pine branches -->
+  <g stroke="#215c2f" stroke-width="6" fill="none" opacity="0.9">
+    <path d="M10 30 l60 0"/>
+    <path d="M50 70 l80 0"/>
+  </g>
+  <g stroke="#2e8b57" stroke-width="2" opacity="0.9">
+    <path d="M20 30 l8 -8"/><path d="M28 30 l8 -8"/><path d="M36 30 l8 -8"/><path d="M44 30 l8 -8"/>
+    <path d="M60 70 l8 -8"/><path d="M68 70 l8 -8"/><path d="M76 70 l8 -8"/><path d="M84 70 l8 -8"/><path d="M92 70 l8 -8"/>
+  </g>
+  <!-- ornaments: baubles and cookie star -->
+  <circle cx="160" cy="28" r="12" fill="#c41414"/>
+  <circle cx="210" cy="70" r="10" fill="#c41414"/>
+  <polygon points="250,30 256,46 274,46 260,56 266,72 250,62 234,72 240,56 226,46 244,46" fill="#f2c98b" stroke="#d7a86e" stroke-width="2"/>
+  <!-- subtle glow -->
+  <circle cx="160" cy="28" r="12" fill="#ff4b4b" opacity="0.5" filter="url(#glow)"/>
+</svg>
