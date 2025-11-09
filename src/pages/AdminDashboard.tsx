@@ -379,6 +379,9 @@ export default function AdminDashboard() {
   if (!ok) {
     return (
       <div className="max-w-md mx-auto px-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="brand-btn">Voltar</Link>
+        </div>
         <h2 className="text-xl font-bold">Acesso restrito</h2>
         <p>Informe usuário e senha do professor para entrar.</p>
         <input type="text" className="px-3 py-2 rounded bg-white/5 border border-white/20 w-full text-white placeholder-white/70" placeholder="Usuário (ex: professor)" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} />
