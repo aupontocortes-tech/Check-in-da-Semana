@@ -36,6 +36,8 @@ export default function AdminDashboard() {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
     localStorage.removeItem('ADMIN_KEY')
     localStorage.removeItem('ADMIN_USER')
+    // Força uso do backend central removendo overrides de API no dispositivo
+    try { localStorage.removeItem('API_BASE') } catch {}
     const controller = new AbortController()
     const { signal } = controller
     ;(async () => {

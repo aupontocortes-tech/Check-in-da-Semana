@@ -28,6 +28,9 @@ if (pool) {
 let SQL = null
 export let sqlite = null
 
+// Marca se o Postgres está funcional (após initSchema)
+let POSTGRES_READY = false
+
 async function ensureSqlite() {
   if (!USE_SQLITE) return null
   if (!SQL) {
@@ -59,52 +62,59 @@ function saveSqlite() {
 }
 
 export function hasDb() {
-  return Boolean(pool) || Boolean(USE_SQLITE)
+  return Boolean(POSTGRES_READY) || Boolean(USE_SQLITE)
 }
 
 export async function initSchema() {
   if (pool) {
-    await pool.query(`
+    try {
+      await pool.query(`
       CREATE TABLE IF NOT EXISTS checkins_app (
         id SERIAL PRIMARY KEY,
         payload JSONB NOT NULL,
         created_at TIMESTAMPTZ DEFAULT now()
       );
     `)
-    await pool.query(`
+      await pool.query(`
       CREATE TABLE IF NOT EXISTS profile_app (
         id INTEGER PRIMARY KEY DEFAULT 1,
         payload JSONB NOT NULL,
         updated_at TIMESTAMPTZ DEFAULT now()
       );
     `)
-    try {
-      const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM profile_app')
-      const count = rows?.[0]?.c ?? 0
-      if (count === 0) {
-        const dataDir = path.join(process.cwd(), 'data')
-        const profilePath = path.join(dataDir, 'profile.json')
-        let initial = { photo: null, email: '', whatsapp: '' }
-        if (fs.existsSync(profilePath)) {
-          try {
-            const raw = fs.readFileSync(profilePath, 'utf-8')
-            const json = JSON.parse(raw)
-            initial = {
-              photo: json.photo || null,
-              email: json.email || '',
-              whatsapp: json.whatsapp || ''
-            }
-          } catch {}
+      try {
+        const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM profile_app')
+        const count = rows?.[0]?.c ?? 0
+        if (count === 0) {
+          const dataDir = path.join(process.cwd(), 'data')
+          const profilePath = path.join(dataDir, 'profile.json')
+          let initial = { photo: null, email: '', whatsapp: '' }
+          if (fs.existsSync(profilePath)) {
+            try {
+              const raw = fs.readFileSync(profilePath, 'utf-8')
+              const json = JSON.parse(raw)
+              initial = {
+                photo: json.photo || null,
+                email: json.email || '',
+                whatsapp: json.whatsapp || ''
+              }
+            } catch {}
+          }
+          await pool.query(
+            'INSERT INTO profile_app (id, payload) VALUES (1, $1::jsonb) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()',
+            [JSON.stringify(initial)]
+          )
         }
-        await pool.query(
-          'INSERT INTO profile_app (id, payload) VALUES (1, $1::jsonb) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()',
-          [JSON.stringify(initial)]
-        )
+      } catch (e) {
+        console.warn('Falha ao migrar perfil para Postgres (ignorado)', e)
       }
+      POSTGRES_READY = true
+      return
     } catch (e) {
-      console.warn('Falha ao migrar perfil para Postgres (ignorado)', e)
+      console.error('Falha ao inicializar schema', e)
+      POSTGRES_READY = false
+      // Prossegue para SQLite caso habilitado; caso contrário, o backend usa filesystem
     }
-    return
   }
 
   if (USE_SQLITE) {
@@ -119,21 +129,17 @@ export async function initSchema() {
     `)
     sqlite.run(`
       CREATE TABLE IF NOT EXISTS profile_app (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY DEFAULT 1,
         payload TEXT NOT NULL,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `)
-
-    // Migração inicial de profile.json
+    // Migração automática do profile.json
     try {
-      const stmt = sqlite.prepare('SELECT COUNT(*) AS c FROM profile_app')
-      let count = 0
-      if (stmt.step()) {
-        const row = stmt.getAsObject()
-        count = Number(row.c || 0)
-      }
+      const stmt = sqlite.prepare('SELECT COUNT(*) AS c FROM profile_app WHERE id = 1')
+      const res = stmt.getAsObject()
       stmt.free()
+      const count = Number(res.c || 0)
       if (count === 0) {
         const dataDir = path.join(process.cwd(), 'data')
         const profilePath = path.join(dataDir, 'profile.json')
@@ -149,31 +155,33 @@ export async function initSchema() {
             }
           } catch {}
         }
-        const ins = sqlite.prepare('INSERT INTO profile_app (id, payload, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP)')
-        ins.run([JSON.stringify(initial)])
-        ins.free()
+        const stmt2 = sqlite.prepare('INSERT OR REPLACE INTO profile_app (id, payload, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP)')
+        stmt2.run([JSON.stringify(initial)])
+        stmt2.free()
         saveSqlite()
       }
     } catch (e) {
       console.warn('Falha ao migrar perfil para SQLite (ignorado)', e)
     }
+    return
   }
 }
 
 export async function getAllCheckins() {
   if (USE_SQLITE) {
     await ensureSqlite()
-    const res = []
-    const stmt = sqlite.prepare('SELECT payload FROM checkins_app ORDER BY created_at DESC, id DESC')
+    const stmt = sqlite.prepare('SELECT payload, created_at FROM checkins_app ORDER BY id DESC')
+    const rows = []
     while (stmt.step()) {
       const row = stmt.getAsObject()
-      try { res.push(JSON.parse(row.payload)) } catch { res.push({}) }
+      const payload = JSON.parse(row.payload)
+      rows.push({ ...payload, createdAt: new Date(row.created_at).toISOString() })
     }
     stmt.free()
-    return res
+    return rows
   }
-  const { rows } = await pool.query('SELECT payload FROM checkins_app ORDER BY created_at DESC, id DESC')
-  return rows.map(r => r.payload)
+  const { rows } = await pool.query('SELECT payload, created_at FROM checkins_app ORDER BY id DESC')
+  return rows.map(r => ({ ...r.payload, createdAt: new Date(r.created_at).toISOString() }))
 }
 
 export async function insertCheckin(obj) {
@@ -191,7 +199,9 @@ export async function insertCheckin(obj) {
 export async function clearCheckins() {
   if (USE_SQLITE) {
     await ensureSqlite()
-    sqlite.run('DELETE FROM checkins_app')
+    const stmt = sqlite.prepare('DELETE FROM checkins_app')
+    stmt.run([])
+    stmt.free()
     saveSqlite()
     return
   }
@@ -202,63 +212,46 @@ export async function getProfileDb() {
   if (USE_SQLITE) {
     await ensureSqlite()
     const stmt = sqlite.prepare('SELECT payload FROM profile_app WHERE id = 1')
-    let p = { photo: null, email: '', whatsapp: '' }
+    let payload = { photo: null, email: '', whatsapp: '' }
     if (stmt.step()) {
       const row = stmt.getAsObject()
-      try { p = JSON.parse(row.payload) || p } catch {}
+      payload = JSON.parse(row.payload)
     }
     stmt.free()
-    return { photo: p.photo || null, email: p.email || '', whatsapp: p.whatsapp || '' }
+    return payload
   }
   const { rows } = await pool.query('SELECT payload FROM profile_app WHERE id = 1')
-  const p = rows?.[0]?.payload || { photo: null, email: '', whatsapp: '' }
-  return { photo: p.photo || null, email: p.email || '', whatsapp: p.whatsapp || '' }
+  return rows?.[0]?.payload || { photo: null, email: '', whatsapp: '' }
 }
 
 export async function writeProfileDb(patch) {
-  const current = await getProfileDb()
-  const next = {
-    photo: patch && 'photo' in patch ? (patch.photo || null) : current.photo,
-    email: patch && 'email' in patch ? (patch.email || '') : current.email,
-    whatsapp: patch && 'whatsapp' in patch ? (patch.whatsapp || '') : current.whatsapp,
-  }
   if (USE_SQLITE) {
     await ensureSqlite()
-    const stmt = sqlite.prepare('INSERT INTO profile_app (id, payload, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP) ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updated_at = CURRENT_TIMESTAMP')
-    stmt.run([JSON.stringify(next)])
+    const stmt = sqlite.prepare('INSERT OR REPLACE INTO profile_app (id, payload, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP)')
+    stmt.run([JSON.stringify(patch)])
     stmt.free()
     saveSqlite()
-    return next
+    return
   }
-  await pool.query(
-    'INSERT INTO profile_app (id, payload) VALUES (1, $1::jsonb) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()',
-    [JSON.stringify(next)]
-  )
-  return next
+  await pool.query('INSERT INTO profile_app (id, payload, updated_at) VALUES (1, $1::jsonb, now()) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()', [JSON.stringify(patch)])
 }
 
 export async function getHealthCounts() {
   if (USE_SQLITE) {
     await ensureSqlite()
-    try {
-      let c1 = 0, c2 = 0
-      let stmt = sqlite.prepare('SELECT COUNT(*) AS c FROM checkins_app')
-      if (stmt.step()) c1 = Number(stmt.getAsObject().c || 0)
-      stmt.free()
-      stmt = sqlite.prepare('SELECT COUNT(*) AS c FROM profile_app')
-      if (stmt.step()) c2 = Number(stmt.getAsObject().c || 0)
-      stmt.free()
-      return { enabled: true, checkins_count: c1, profile_rows: c2 }
-    } catch (e) {
-      return { enabled: true, error: 'query_failed' }
-    }
+    const stmt = sqlite.prepare('SELECT COUNT(*) AS c FROM checkins_app')
+    const res = stmt.getAsObject()
+    stmt.free()
+    const stmt2 = sqlite.prepare('SELECT COUNT(*) AS c FROM profile_app')
+    const res2 = stmt2.getAsObject()
+    stmt2.free()
+    return { enabled: true, checkins_count: Number(res.c || 0), profile_rows: Number(res2.c || 0), kind: 'sqlite', file: SQLITE_FILE }
   }
-  if (!pool) return { enabled: false }
   try {
-    const { rows: r1 } = await pool.query('SELECT COUNT(*)::int AS c FROM checkins_app')
-    const { rows: r2 } = await pool.query('SELECT COUNT(*)::int AS c FROM profile_app')
-    return { enabled: true, checkins_count: r1?.[0]?.c ?? 0, profile_rows: r2?.[0]?.c ?? 0 }
+    const r1 = await pool.query('SELECT COUNT(*)::int AS c FROM checkins_app')
+    const r2 = await pool.query('SELECT COUNT(*)::int AS c FROM profile_app')
+    return { enabled: true, checkins_count: r1.rows?.[0]?.c ?? 0, profile_rows: r2.rows?.[0]?.c ?? 0, kind: 'postgres' }
   } catch (e) {
-    return { enabled: true, error: 'query_failed' }
+    return { enabled: false }
   }
 }

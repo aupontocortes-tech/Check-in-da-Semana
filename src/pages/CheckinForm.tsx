@@ -41,6 +41,11 @@ export default function CheckinForm() {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
+  // Garante backend central: remove qualquer override de API_BASE no dispositivo
+  useEffect(() => {
+    try { localStorage.removeItem('API_BASE') } catch {}
+  }, [])
+
   const handleInstallClick = async () => {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
     const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (window.navigator as any).standalone

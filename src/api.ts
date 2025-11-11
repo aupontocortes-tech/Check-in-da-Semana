@@ -1,24 +1,31 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import { CheckinFormData } from './types'
 
+// Ambiente
+const IS_DEV = Boolean((import.meta as any).env?.DEV)
+
 // Resolve possíveis bases da API: env, localhost (dev) e Render (produção)
 const CANDIDATE_BASES: string[] = (() => {
   const bases: string[] = []
   // Override em runtime via localStorage para produção (permite configurar sem redeploy)
-  try {
-    if (typeof window !== 'undefined') {
-      // Permite configuração via query string: ?api=... ou ?api_base=...
-      try {
-        const url = new URL(window.location.href)
-        const qApi = (url.searchParams.get('api') || url.searchParams.get('api_base') || '').trim()
-        if (qApi) {
-          window.localStorage.setItem('API_BASE', qApi)
-        }
-      } catch {}
-      const rt = (window.localStorage.getItem('API_BASE') || '').trim()
-      if (rt) bases.push(rt)
-    }
-  } catch {}
+  // Em produção, NÃO aceitar override por dispositivo para evitar dados fragmentados
+  // Mantemos o override apenas em desenvolvimento para facilitar testes.
+  if (IS_DEV) {
+    try {
+      if (typeof window !== 'undefined') {
+        // Permite configuração via query string: ?api=... ou ?api_base=...
+        try {
+          const url = new URL(window.location.href)
+          const qApi = (url.searchParams.get('api') || url.searchParams.get('api_base') || '').trim()
+          if (qApi) {
+            window.localStorage.setItem('API_BASE', qApi)
+          }
+        } catch {}
+        const rt = (window.localStorage.getItem('API_BASE') || '').trim()
+        if (rt) bases.push(rt)
+      }
+    } catch {}
+  }
   const envBase = (import.meta.env.VITE_API_BASE as string) || ''
   if (typeof window !== 'undefined') {
     const host = window.location.host || ''
@@ -36,8 +43,7 @@ const CANDIDATE_BASES: string[] = (() => {
   // Em seguida, qualquer base configurada via env
   if (envBase) bases.push(envBase)
   // Por fim, fallback Render somente fora do modo dev quando não houver env
-  const isDev = Boolean((import.meta as any).env?.DEV)
-  if (!envBase && !isDev) bases.push('https://checkin-backend.onrender.com')
+  if (!envBase && !IS_DEV) bases.push('https://checkin-backend.onrender.com')
   // Remove duplicados e valores vazios
   return Array.from(new Set(bases.filter(Boolean)))
 })()
@@ -45,12 +51,15 @@ const CANDIDATE_BASES: string[] = (() => {
 // Bases em runtime (recheca localStorage sempre que chamada)
 function runtimeBases(): string[] {
   const bases = CANDIDATE_BASES.slice()
-  try {
-    if (typeof window !== 'undefined') {
-      const rt = (window.localStorage.getItem('API_BASE') || '').trim()
-      if (rt) bases.unshift(rt)
-    }
-  } catch {}
+  // Em produção, não considerar override de API_BASE do cliente
+  if (IS_DEV) {
+    try {
+      if (typeof window !== 'undefined') {
+        const rt = (window.localStorage.getItem('API_BASE') || '').trim()
+        if (rt) bases.unshift(rt)
+      }
+    } catch {}
+  }
   // Prioriza VITE_API_BASE antes de window.origin em produção
   const envBaseRt = (import.meta.env.VITE_API_BASE as string) || ''
   if (envBaseRt) bases.unshift(envBaseRt)
@@ -138,15 +147,8 @@ export async function submitCheckin(data: CheckinFormData) {
     const res = await postWithFallback(`/api/checkin`, data)
     return res
   } catch (_) {
-    // Fallback: sem backend, persistir localmente para não bloquear UX
-    const key = 'CHECKINS'
-    const arrStr = localStorage.getItem(key) || '[]'
-    let arr: any[] = []
-    try { arr = JSON.parse(arrStr) } catch { arr = [] }
-    const item = { ...data, createdAt: new Date().toISOString() }
-    arr.unshift(item)
-    try { localStorage.setItem(key, JSON.stringify(arr)) } catch {}
-    return { ok: true, local: true }
+    // Sem fallback local: garantir persistência central
+    throw new Error('submit_failed')
   }
 }
 
