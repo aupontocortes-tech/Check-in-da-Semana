@@ -50,12 +50,26 @@ function appendOne(obj) {
 }
 
 async function readAllUnified() {
-  if (hasDb()) return await dbGetAllCheckins()
+  if (hasDb()) {
+    try {
+      return await dbGetAllCheckins()
+    } catch (e) {
+      console.warn('Leitura via DB falhou, usando filesystem', e)
+      return readAll()
+    }
+  }
   return readAll()
 }
 
 async function appendOneUnified(obj) {
-  if (hasDb()) return await dbInsertCheckin(obj)
+  if (hasDb()) {
+    try {
+      return await dbInsertCheckin(obj)
+    } catch (e) {
+      console.warn('Gravação via DB falhou, usando filesystem', e)
+      return appendOne(obj)
+    }
+  }
   return appendOne(obj)
 }
 
