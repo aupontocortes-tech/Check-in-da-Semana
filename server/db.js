@@ -61,8 +61,12 @@ function saveSqlite() {
   fs.writeFileSync(SQLITE_FILE, Buffer.from(data))
 }
 
+// Indica se há alguma configuração de banco disponível (Postgres ou SQLite)
+// Importante: usar presença de pool/USE_SQLITE, não o flag de POSTGRES_READY,
+// pois POSTGRES_READY só fica true após initSchema(). Isso evita ciclo:
+// hasDb() -> initSchema() nunca chamado em produção quando só Postgres existe.
 export function hasDb() {
-  return Boolean(POSTGRES_READY) || Boolean(USE_SQLITE)
+  return Boolean(pool) || Boolean(USE_SQLITE)
 }
 
 export async function initSchema() {
