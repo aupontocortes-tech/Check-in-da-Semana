@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile, getActiveApiBase, setRuntimeApiBase, pingHealth } from '../api'
+import { listCheckins, generatePdfReport, sendReportWebhook, adminLogin, clearAllData, getProfile, updateProfile, getActiveApiBase, setRuntimeApiBase, pingHealth, syncLocalCheckins } from '../api'
 import type { CheckinFormData, SleepOption, EnergyOption, MotivationOption } from '../types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, Legend, CartesianGrid, ResponsiveContainer } from 'recharts'
 
@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [apiBase, setApiBase] = useState('')
   const [savingApi, setSavingApi] = useState(false)
   const [savingContacts, setSavingContacts] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   
   useEffect(() => {
     // Exigir login sempre: não faz auto-login e limpa credenciais salvas
@@ -109,6 +110,34 @@ export default function AdminDashboard() {
       alert('Senha inválida ou erro ao excluir os dados.')
     } finally {
       setClearing(false)
+    }
+  }
+
+  const saveApiBase = async () => {
+    const v = apiBase.trim()
+    if (!/^https?:\/\//i.test(v)) {
+      alert('Informe uma URL começando com http:// ou https://')
+      return
+    }
+    setSavingApi(true)
+    try {
+      const active = setRuntimeApiBase(v)
+      setApiBase(active || v)
+      const okPing = await pingHealth(active)
+      alert(okPing ? 'Backend configurado e ativo.' : 'Backend configurado, mas o /health falhou.')
+    } finally {
+      setSavingApi(false)
+    }
+  }
+
+  const syncNow = async () => {
+    setSyncing(true)
+    try {
+      const n = await syncLocalCheckins()
+      alert(n ? `Sincronizados ${n} check-ins locais.` : 'Não havia itens locais para sincronizar.')
+      if (adminKey.trim()) await fetchData(adminKey.trim())
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -409,6 +438,26 @@ export default function AdminDashboard() {
           {updateNotice}
         </div>
       )}
+      {/* Configuração de backend e sincronização */}
+      <div className="bg-white/5 rounded p-4">
+        <h3 className="font-semibold mb-2">Conexão com o servidor</h3>
+        <p className="text-sm opacity-80 mb-3">Defina o backend ativo (ex.: http://192.168.1.211:5175 ou https://seu-backend.com). Depois, sincronize itens salvos offline.</p>
+        <div className="flex gap-2 items-center mb-2 flex-wrap">
+          <input
+            className="flex-1 min-w-[240px] px-3 py-2 rounded bg-white/5 border border-white/10"
+            placeholder="URL do backend (http/https)"
+            value={apiBase}
+            onChange={(e)=>setApiBase(e.target.value)}
+          />
+          <button className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700" onClick={saveApiBase} disabled={savingApi}>
+            {savingApi ? 'Salvando…' : 'Salvar backend'}
+          </button>
+          <button className="px-3 py-2 rounded bg-green-600 hover:bg-green-700" onClick={syncNow} disabled={syncing}>
+            {syncing ? 'Sincronizando…' : 'Sincronizar agora'}
+          </button>
+        </div>
+        <p className="text-xs opacity-60">Dica: no celular, abra o site com <code>?api=URL</code> para apontar ao backend sem redeploy.</p>
+      </div>
       <div className="flex items-end justify-between flex-wrap gap-2">
         <Link to="/" className="brand-btn">Voltar</Link>
         <div className="flex items-end gap-3 flex-wrap">

@@ -4,29 +4,41 @@ import { CheckinFormData } from './types'
 // Ambiente
 const IS_DEV = Boolean((import.meta as any).env?.DEV)
 
+// Normaliza bases: remove barras finais e sufixo /api, garante http(s)
+function normalizeBase(raw?: string): string | undefined {
+  if (!raw) return undefined
+  let s = raw.trim()
+  if (!/^(https?:)\/\//i.test(s)) return undefined
+  // remove espaços e barras extras
+  s = s.replace(/\s+/g, '')
+  s = s.replace(/\/$/, '')
+  // se terminar com /api, remove para evitar /api/api
+  s = s.replace(/\/api$/i, '')
+  return s
+}
+
 // Resolve possíveis bases da API: env, localhost (dev) e Render (produção)
 const CANDIDATE_BASES: string[] = (() => {
   const bases: string[] = []
-  // Override em runtime via localStorage para produção (permite configurar sem redeploy)
-  // Em produção, NÃO aceitar override por dispositivo para evitar dados fragmentados
-  // Mantemos o override apenas em desenvolvimento para facilitar testes.
-  if (IS_DEV) {
-    try {
-      if (typeof window !== 'undefined') {
-        // Permite configuração via query string: ?api=... ou ?api_base=...
-        try {
-          const url = new URL(window.location.href)
-          const qApi = (url.searchParams.get('api') || url.searchParams.get('api_base') || '').trim()
-          if (qApi) {
-            window.localStorage.setItem('API_BASE', qApi)
-          }
-        } catch {}
-        const rt = (window.localStorage.getItem('API_BASE') || '').trim()
-        if (rt) bases.push(rt)
-      }
-    } catch {}
-  }
-  const envBase = (import.meta.env.VITE_API_BASE as string) || ''
+  // Override em runtime via localStorage/QUERY, inclusive em produção.
+  // Observação: este é um modo emergência para apontar a API sem redeploy.
+  // Aceitamos apenas URLs http/https simples para evitar valores inválidos.
+  try {
+    if (typeof window !== 'undefined') {
+      // Permite configuração via query string: ?api=... ou ?api_base=...
+      try {
+        const url = new URL(window.location.href)
+        const qApi = (url.searchParams.get('api') || url.searchParams.get('api_base') || '').trim()
+        const n = normalizeBase(qApi)
+        if (n) {
+          window.localStorage.setItem('API_BASE', n)
+        }
+      } catch {}
+      const rt = normalizeBase(window.localStorage.getItem('API_BASE') || '')
+      if (rt) bases.push(rt)
+    }
+  } catch {}
+  const envBase = normalizeBase((import.meta.env.VITE_API_BASE as string) || '') || ''
   if (typeof window !== 'undefined') {
     const host = window.location.host || ''
     const isLocal = /localhost|127\.0\.0\.1/.test(host)
@@ -51,17 +63,15 @@ const CANDIDATE_BASES: string[] = (() => {
 // Bases em runtime (recheca localStorage sempre que chamada)
 function runtimeBases(): string[] {
   const bases = CANDIDATE_BASES.slice()
-  // Em produção, não considerar override de API_BASE do cliente
-  if (IS_DEV) {
-    try {
-      if (typeof window !== 'undefined') {
-        const rt = (window.localStorage.getItem('API_BASE') || '').trim()
-        if (rt) bases.unshift(rt)
-      }
-    } catch {}
-  }
+  // Considera override de API_BASE do cliente sempre (emergência)
+  try {
+    if (typeof window !== 'undefined') {
+      const rt = normalizeBase(window.localStorage.getItem('API_BASE') || '')
+      if (rt) bases.unshift(rt)
+    }
+  } catch {}
   // Prioriza VITE_API_BASE antes de window.origin em produção
-  const envBaseRt = (import.meta.env.VITE_API_BASE as string) || ''
+  const envBaseRt = normalizeBase((import.meta.env.VITE_API_BASE as string) || '') || ''
   if (envBaseRt) bases.unshift(envBaseRt)
   return Array.from(new Set(bases.filter(Boolean)))
 }
