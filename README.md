@@ -47,7 +47,9 @@ App React + Tailwind para formulário público de check-in e painel administrati
 1. Importar o repositório do GitHub.
 2. Framework: Vite; Build: `npm run build`; Output: `dist`.
 3. Variáveis: `VITE_API_BASE=<URL_DO_BACKEND>`, `VITE_ADMIN_USERNAME=professor`, `VITE_ADMIN_KEY=0808`.
-4. Redeploy e testar `https://SEU_SITE.vercel.app/admin`.
+4. O rewrite de `/api/*` foi removido do `vercel.json`. O frontend chama diretamente o backend em `VITE_API_BASE` (normalizado com ou sem `/api`).
+5. Garanta que o backend permita CORS para o domínio Vercel: defina `CORS_ORIGIN=https://SEU_SITE.vercel.app` (e `CORS_ORIGIN_2/3` para previews, se necessário).
+6. Redeploy e testar `https://SEU_SITE.vercel.app/admin`.
 
 ### Armazenamento de dados
 
