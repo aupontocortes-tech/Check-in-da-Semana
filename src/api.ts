@@ -147,8 +147,19 @@ export async function submitCheckin(data: CheckinFormData) {
     const res = await postWithFallback(`/api/checkin`, data)
     return res
   } catch (_) {
-    // Sem fallback local: garantir persistência central
-    throw new Error('submit_failed')
+    // Backend indisponível: salva offline no dispositivo e segue fluxo
+    try {
+      const key = 'CHECKINS'
+      const arrStr = localStorage.getItem(key) || '[]'
+      let arr: any[] = []
+      try { arr = JSON.parse(arrStr) || [] } catch { arr = [] }
+      const withTs = { ...data, createdAt: new Date().toISOString() }
+      arr.unshift(withTs)
+      localStorage.setItem(key, JSON.stringify(arr))
+      return { ok: true, offline: true }
+    } catch {
+      throw new Error('submit_failed')
+    }
   }
 }
 
@@ -186,8 +197,15 @@ export async function listCheckins(params?: { nome?: string; from?: string; to?:
     })
     return res as CheckinFormData[]
   } catch (_) {
-    // Sem fallback local no Admin: retorna lista vazia para evitar divergência por dispositivo
-    return []
+    // Fallback local: exibe itens do dispositivo atual para não bloquear operação
+    const key = 'CHECKINS'
+    try {
+      const arrStr = localStorage.getItem(key) || '[]'
+      const arr = JSON.parse(arrStr) || []
+      return Array.isArray(arr) ? arr : []
+    } catch {
+      return []
+    }
   }
 }
 

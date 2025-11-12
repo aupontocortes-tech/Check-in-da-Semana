@@ -61,6 +61,14 @@ export default function AdminDashboard() {
     const data = await listCheckins({ adminKey: key, nome: nome || undefined })
     setItems(data)
     if (!nome) setAllItems(data)
+    // Se veio de fallback local, avisa em destaque
+    try {
+      const origin = getActiveApiBase() || ''
+      const isLocal = Array.isArray(data) && data.length && !origin
+      if (!ok && Array.isArray(data) && data.length && isLocal) {
+        alert('Modo offline: exibindo check-ins locais deste dispositivo. O servidor será sincronizado quando voltar.')
+      }
+    } catch {}
   }
 
   const handleLogin = async () => {

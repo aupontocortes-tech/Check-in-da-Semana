@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { submitCheckin, sendReportWebhook, getProfile } from '../api'
+import { submitCheckin, sendReportWebhook, getProfile, syncLocalCheckins } from '../api'
 import type { CheckinFormData } from '../types'
 
 const initial: CheckinFormData = {
@@ -81,6 +81,13 @@ export default function CheckinForm() {
         setSitePhoto(p.photo || null)
         setAdminWhatsappFromProfile((p.whatsapp || '').replace(/\D/g, ''))
       } catch {}
+      // Tenta sincronizar check-ins locais ao iniciar
+      try {
+        const count = await syncLocalCheckins()
+        if (count > 0) {
+          console.log(`Sincronizados ${count} check-ins locais.`)
+        }
+      } catch {}
     })()
     return () => { controller.abort() }
   }, [])
@@ -93,26 +100,45 @@ export default function CheckinForm() {
       const adminWhatsappRaw = adminWhatsappFromProfile || ''
       const adminWhatsapp = (adminWhatsappRaw || '').replace(/\D/g, '')
 
-      // Helper: URL de envio para WhatsApp compatível com iOS/Android
-      const buildWhatsUrl = (phone: string, encodedText: string) => {
+      // Helpers WhatsApp: construir URLs e abrir com fallbacks robustos
+      const buildWhatsUrls = (phone: string, encodedText: string) => {
         const p = (phone || '').replace(/\D/g, '')
-        // api.whatsapp.com é mais compatível com Safari/iOS do que wa.me
-        return `https://api.whatsapp.com/send?phone=${p}&text=${encodedText}&app_absent=0`
+        const primary = `https://api.whatsapp.com/send?phone=${p}&text=${encodedText}&app_absent=0`
+        const secondary = `https://wa.me/${p}?text=${encodedText}`
+        // Evitamos whatsapp:// em navegadores, pois causa ERR_ABORTED em ambientes web
+        return { primary, secondary }
       }
-      // Helper: abertura segura com fallback para iOS (PWA/Safari)
-      const openWhatsApp = (url: string) => {
+      const openWhatsApp = (urls: { primary: string; secondary: string }, originalText: string) => {
         const ua = navigator.userAgent || ''
         const isIOS = /(iPhone|iPad|iPod)/i.test(ua) || (/Macintosh/i.test(ua) && 'ontouchend' in document)
         try {
-          // Usa location.assign para evitar bloqueio de pop-up e garantir navegação
-          window.location.assign(url)
+          if (isIOS) {
+            // iOS/Safari/PWA: navegação direta é mais confiável
+            window.location.assign(urls.primary)
+          } else {
+            // Desktop/Android: tentar abrir nova aba, depois fallback para assign
+            const w = window.open(urls.primary, '_blank', 'noopener,noreferrer')
+            if (!w) {
+              window.location.assign(urls.primary)
+            }
+          }
         } catch {
-          window.location.assign(url)
+          try {
+            const w2 = window.open(urls.secondary, '_blank', 'noopener,noreferrer')
+            if (!w2) {
+              window.location.assign(urls.secondary)
+            }
+          } catch {
+            // Fallback final: copiar texto e orientar usuário
+            try { navigator.clipboard.writeText(originalText) } catch {}
+            alert('Não foi possível abrir o WhatsApp automaticamente. O texto foi copiado — cole no WhatsApp e envie.')
+          }
         }
       }
 
       // Pré-calcula a URL do WhatsApp, mas NÃO navega ainda
-      let whatsUrl: string | null = null
+      let whatsUrls: { primary: string; secondary: string } | null = null
+      let originalTextForClipboard: string = ''
       if (adminWhatsapp) {
         const lines = [
           `Novo check-in: ${data.nomeCompleto} — ${data.semanaTexto}`,
@@ -128,16 +154,21 @@ export default function CheckinForm() {
           data.comentariosAdicionais ? `Comentários: ${data.comentariosAdicionais}` : '',
           (data.diasMarcados?.length ? `Dias marcados: ${data.diasMarcados.join(', ')}` : ''),
         ].filter(Boolean)
-        const text = encodeURIComponent(lines.join('\n'))
-        whatsUrl = buildWhatsUrl(adminWhatsapp, text)
+        originalTextForClipboard = lines.join('\n')
+        const text = encodeURIComponent(originalTextForClipboard)
+        whatsUrls = buildWhatsUrls(adminWhatsapp, text)
       }
 
       // 1) Salva o check-in (remoto com fallback local)
-      await submitCheckin(data)
+      const resp = await submitCheckin(data)
+      if ((resp as any)?.offline) {
+        // Informa discretamente que foi salvo offline
+        alert('Sem conexão com o servidor. Seu check-in foi salvo offline e será sincronizado assim que possível.')
+      }
 
       // 2) Abre WhatsApp APÓS salvar, para não interromper o salvamento
-      if (whatsUrl) {
-        openWhatsApp(whatsUrl)
+      if (whatsUrls) {
+        openWhatsApp(whatsUrls, originalTextForClipboard)
       }
 
       // 3) Dispara webhook (não bloqueia UX)
