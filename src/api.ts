@@ -141,8 +141,11 @@ async function postWithFallback<T>(path: string, payload: any): Promise<T> {
 
 export async function adminLogin(payload: { username: string; password: string }) {
   try {
-    const res = await postWithFallback<{ ok: boolean }>(`/api/admin/login`, payload)
-    return res as { ok: boolean }
+    const res = await postWithFallback<any>(`/api/admin/login`, payload)
+    // Se a resposta não for um objeto com ok:boolean, trata como inválida para acionar fallback
+    const okFlag = typeof res === 'object' && res && typeof (res as any).ok === 'boolean' ? Boolean((res as any).ok) : false
+    if (!okFlag) throw new Error('invalid_response')
+    return { ok: true }
   } catch (e) {
     // Fallback para ambientes somente-frontend (ex.: Vercel) usando variáveis VITE_
     const viteUser = (import.meta.env.VITE_ADMIN_USERNAME as string) || 'professor'
@@ -250,10 +253,21 @@ export async function clearAllData(payload: { adminKey: string }) {
 
 // Perfil do site (foto fixa)
 export async function getProfile(config?: AxiosRequestConfig) {
-  const fixedPhoto = '/profile-fixed.jpg?v=20251108-2' // coloque a imagem em public/profile-fixed.jpg
-  const fixedWhatsapp = '5561994422679'
-  // Sem chamadas de rede: valores 100% fixos no cliente
-  return { photo: fixedPhoto, email: '', whatsapp: fixedWhatsapp }
+  // Tenta buscar do backend; em caso de falha, usa valores fixos
+  try {
+    const res = await getWithFallback<{ photo?: string | null; email?: string; whatsapp?: string }>(`/api/profile`, config)
+    const p = (res || {}) as any
+    // Sanitiza tipos
+    return {
+      photo: typeof p.photo === 'string' || p.photo === null ? p.photo : undefined,
+      email: typeof p.email === 'string' ? p.email : '',
+      whatsapp: typeof p.whatsapp === 'string' ? p.whatsapp : '',
+    }
+  } catch {
+    const fixedPhoto = '/profile-fixed.jpg?v=20251108-2'
+    const fixedWhatsapp = '5561994422679'
+    return { photo: fixedPhoto, email: '', whatsapp: fixedWhatsapp }
+  }
 }
 
 export async function updateProfile(payload: { photo?: string | null; email?: string; whatsapp?: string; adminKey?: string }) {

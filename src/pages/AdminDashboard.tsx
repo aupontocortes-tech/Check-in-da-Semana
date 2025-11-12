@@ -34,15 +34,32 @@ export default function AdminDashboard() {
   const [syncing, setSyncing] = useState(false)
   
   useEffect(() => {
-    // Exigir login sempre: não faz auto-login e limpa credenciais salvas
-    localStorage.removeItem('ADMIN_KEY')
-    localStorage.removeItem('ADMIN_USER')
-    // Força uso do backend central removendo overrides de API no dispositivo
-    try { localStorage.removeItem('API_BASE') } catch {}
+    // Tenta auto-login com credenciais salvas e mantém backend configurado
     const controller = new AbortController()
     const { signal } = controller
     ;(async () => {
       try {
+        // Auto-login se houver credenciais salvas
+        const savedUser = (localStorage.getItem('ADMIN_USER') || '').trim()
+        const savedKey = (localStorage.getItem('ADMIN_KEY') || '').trim()
+        if (savedUser && savedKey && !ok) {
+          try {
+            const resp = await adminLogin({ username: savedUser, password: savedKey })
+            if (resp?.ok) {
+              setAdminUser(savedUser)
+              setAdminKey(savedKey)
+              setOk(true)
+              try { await fetchData(savedKey) } catch {}
+            } else {
+              // limpa em caso de falha
+              localStorage.removeItem('ADMIN_USER')
+              localStorage.removeItem('ADMIN_KEY')
+            }
+          } catch {
+            localStorage.removeItem('ADMIN_USER')
+            localStorage.removeItem('ADMIN_KEY')
+          }
+        }
         const p = await getProfile({ signal })
         setSitePhoto(p.photo || null)
         // Usa exclusivamente os valores do servidor
@@ -81,6 +98,10 @@ export default function AdminDashboard() {
       if (!resp.ok) throw new Error('invalid')
       // Entra no painel imediatamente; busca dados em segundo plano
       setOk(true)
+      try {
+        localStorage.setItem('ADMIN_USER', user)
+        localStorage.setItem('ADMIN_KEY', pass)
+      } catch {}
       try { await fetchData(pass) } catch {}
     } catch (e) {
       alert('Usuário ou senha inválidos')
@@ -433,6 +454,13 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 space-y-6">
       <h2 className="text-2xl font-bold">Painel de Administração</h2>
+      <div className="flex items-center gap-2">
+        <span className="text-sm opacity-75">Logado como: {adminUser || '—'}</span>
+        <button
+          className="px-2 py-1 rounded bg-white/10 hover:bg-white/20"
+          onClick={() => { try { localStorage.removeItem('ADMIN_USER'); localStorage.removeItem('ADMIN_KEY') } catch {}; setOk(false); setItems([]); setAllItems([]); setSelectedItem(null) }}
+        >Sair</button>
+      </div>
       {updateNotice && (
         <div className="px-3 py-2 rounded bg-green-600/20 border border-green-500/40 text-green-100">
           {updateNotice}
@@ -528,7 +556,7 @@ export default function AdminDashboard() {
               </label>
               <label className="grid gap-1">
                 <span className="text-sm opacity-80">WhatsApp do treinador (com DDD)</span>
-                <input className="px-3 py-2 rounded bg_WHITE/5 border border_WHITE/10" placeholder="ex: 5561994422679" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
+                <input className="px-3 py-2 rounded bg-white/5 border border-white/10" placeholder="ex: 5561994422679" value={adminWhatsapp} onChange={(e) => setAdminWhatsapp(e.target.value)} />
                 <span className="text-xs opacity-60">Formato esperado: 5561994422679 (+55 DDI, 61 DDD)</span>
               </label>
             </div>
