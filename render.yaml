@@ -15,8 +15,6 @@ services:
         value: professor
       - key: ADMIN_KEY
         value: 0808
-      - key: PORT
-        value: 5174
       - key: CORS_ORIGIN
         value: https://check-in-da-semana.vercel.app
       # Opcional: configurar envio de e-mail/WhatsApp Cloud API
